@@ -1,0 +1,46 @@
+{
+  "apiName": "demo",
+  "apiType": "admin",
+  "99902": {
+    "fileName": "demo",
+    "actName": "adminTest2",
+    "desc": "test",
+    "req": [
+      [
+        "cityID",
+        "string",
+        "required",
+        "解锁的城堡id"
+      ]
+    ],
+    "resp": [
+      [
+        "award",
+        "[]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ]
+    ]
+  },
+  "99903":{
+    "fileName": "demo",
+    "actName": "adminTest3",
+    "desc": "test",
+    "req": [
+      [
+        "cityID",
+        "int",
+        "required",
+        "解锁的城堡id"
+      ]
+    ],
+    "resp": [
+      [
+        "award",
+        "[]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ]
+    ]
+  }
+}

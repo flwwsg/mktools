@@ -1,0 +1,622 @@
+package do
+
+import (
+	"bytes"
+	"fmt"
+	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
+	"go/types"
+	"io/ioutil"
+	"log"
+	"mktools/common"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"text/template"
+)
+
+// TokenTag tag Name
+const TokenTag = "valid"
+
+// APITemplate template of md
+const APITemplate = `
+### {{.ActionID}} {{.ActionDesc}}
+
+#### 请求
+
+字段|类型|描述|
+---|---|---
+{{range $i, $f := .ReqFields}}
+{{- $f.Alias}} | {{$f.ValueType | printf "%s" }}| {{printDesc $f.Desc }}
+{{end}}
+
+#### 响应
+
+字段|类型|描述|
+---|---|---
+{{range $i, $f := .RespFields}}
+{{- $f.Alias}} | {{$f.ValueType | printf "%s" }} | {{printDesc $f.Desc }}
+{{end -}}
+`
+
+// CustomTypeTemplate template for custom type
+const CustomTypeTemplate = `
+### 自定义数据类型
+{{$length := len .}}
+{{- if eq $length 0}}
+#### 无
+{{end -}}
+{{range $i, $typ := .}}
+#### {{$typ.Name}}
+字段|类型|描述|
+---|---|---
+{{range $i, $f := $typ.Fields}}
+{{- $f.Alias}} | {{$f.ValueType | printf "%s" }} | {{printDesc $f.Desc }}
+{{end -}}
+{{end -}}
+`
+
+// apiField each field of an api
+type apiField struct {
+	Name string
+	//display Name
+	Alias     string
+	ValueType string
+	Desc      string
+	Required  bool
+}
+
+// singleAPI an api
+type singleAPI struct {
+	ActionID    string
+	ActionDesc  string
+	ReqFields   []*apiField
+	RespFields  []*apiField
+	CustomTypes []*structType
+}
+
+// structType recording struct
+type structType struct {
+	Name     string
+	ActionID string //mark action id to specify API, only request struct will be marked
+	Fields   []*apiField
+	Desc     string
+	PkgName  string
+}
+
+type decType struct {
+	Name     string
+	ActionID string //mark action id to specify API, only request struct will be marked
+	Fields   []*apiField
+	Desc     string
+	PkgName  string
+	IsStruct bool
+}
+
+//InSearch 是否允许搜索
+func (d decType) InSearch() bool {
+	return false
+}
+
+func (d decType) SetDesc(comm string) {
+	if !d.IsStruct {
+		return
+	}
+	//drop struct Name
+	desc := strings.Replace(comm, d.Name, "", 1)
+	desc = strings.Replace(desc, "\n", " ", -1)
+	d.Desc = strings.TrimSpace(desc)
+}
+
+//GenDoc generating api file
+func GenDoc(apiPath string) string {
+	input, err := filepath.Abs(apiPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	structs, imps := pkgStructs(input)
+	fmt.Printf("%v\n", imps)
+	allAPI := genAPI(structs)
+	//not api file
+	if len(allAPI) == 0 {
+		return ""
+	}
+	rtn := make([]string, len(allAPI)+1)
+	idx := make([]int, len(allAPI))
+	i := 0
+	for k := range allAPI {
+		n, err := strconv.Atoi(k)
+		if err != nil {
+			log.Fatal(err)
+		}
+		idx[i] = n
+		i++
+	}
+	sort.Ints(idx)
+	customTypes := make([]*structType, 0)
+	for i, aid := range idx {
+		strAID := strconv.Itoa(aid)
+		api, _ := allAPI[strAID]
+		b := FormatSingleAPI(api)
+		rtn[i+1] = b.String()
+		customTypes = append(customTypes, api.CustomTypes...)
+	}
+	customTypes = unique(customTypes)
+	b := FormatCustomTypes(customTypes)
+	rtn[0] = b.String()
+	s := strings.Join(rtn, "")
+	return s
+}
+
+func (s *structType) isReq() bool {
+	//request struct Name is like DemoLoginParams
+	l := len(s.Name)
+	if l < 6 {
+		return false
+	}
+	if s.Name[l-6:] == "Params" {
+		return true
+	}
+	return false
+}
+
+func (s *structType) isResp() bool {
+	//response struct Name is like DemoLoginResp
+	l := len(s.Name)
+	if l < 4 {
+		return false
+	}
+	if s.Name[l-4:] == "Resp" {
+		return true
+	}
+	return false
+}
+
+func (s *structType) isType(typeName string) bool {
+	if strings.Contains(typeName, s.Name) {
+		return true
+	}
+	return false
+}
+
+func (s *structType) SetDesc(comm string) {
+	//drop struct Name
+	desc := strings.Replace(comm, s.Name, "", 1)
+	desc = strings.Replace(desc, "\n", " ", -1)
+	s.Desc = strings.TrimSpace(desc)
+}
+
+// IsValidTag check tag is valid or not
+func (field *apiField) IsValidTag(t string) bool {
+	if strings.Contains(t, "-") {
+		return false
+	}
+	return true
+}
+
+func (field *apiField) SetDesc(s string) {
+	desc := strings.Replace(s, field.Name, "", 1)
+	desc = strings.Replace(desc, "\n", " ", -1)
+	field.Desc = strings.TrimSpace(desc)
+
+}
+
+//ParseTag handle tag
+func (field *apiField) ParseTag(f *ast.Field, t string) {
+	// t = "valid: \"Required, xxx\""
+	if !field.IsValidTag(t) {
+		return
+	}
+	t = t[strings.Index(t, "\"")+1 : strings.LastIndex(t, "\"")]
+	fields := strings.Split(t, ",")
+	field.Required = false
+	for _, f := range fields {
+		f = strings.TrimSpace(f)
+		if f == "" {
+			continue
+		}
+		switch f {
+		case "Required":
+			field.Required = true
+		case "optional":
+		default:
+			continue
+		}
+	}
+}
+
+// FormatSingleAPI generate a single api markdown file
+func FormatSingleAPI(api singleAPI) *bytes.Buffer {
+	var printDesc = func(desc string) string {
+		if desc == "" {
+			return "无"
+		}
+		return strings.TrimSpace(desc)
+	}
+	var printNeed = func(need bool) string {
+		if need {
+			return "是"
+		}
+		return "否"
+
+	}
+	doc, err := template.New("request").Funcs(template.FuncMap{"printDesc": printDesc, "printNeed": printNeed}).
+		Parse(APITemplate)
+	if err != nil {
+		log.Fatal(err)
+	}
+	b := new(bytes.Buffer)
+	doc.Execute(b, api)
+	return b
+}
+
+// FormatCustomTypes format cutom types in template
+func FormatCustomTypes(api []*structType) *bytes.Buffer {
+	var printDesc = func(desc string) string {
+		if desc == "" {
+			return "无"
+		}
+		return strings.TrimSpace(desc)
+	}
+	doc, err := template.New("CustomTypes").Funcs(template.FuncMap{"printDesc": printDesc}).
+		Parse(CustomTypeTemplate)
+	if err != nil {
+		log.Fatal(err)
+	}
+	b := new(bytes.Buffer)
+	doc.Execute(b, api)
+	return b
+}
+
+//genAPI generating single api with ActionID
+func genAPI(pkg []*structType) map[string]singleAPI {
+	allAPI := make(map[string]singleAPI, 0)
+	for _, st := range pkg {
+		// structname does not contains "param" or "resp"
+		if !st.isReq() && !st.isResp() {
+			continue
+		}
+		api := new(singleAPI)
+		_, ok := allAPI[st.ActionID]
+		if ok {
+			api.RespFields = allAPI[st.ActionID].RespFields
+			api.ReqFields = allAPI[st.ActionID].ReqFields
+			api.ActionDesc = allAPI[st.ActionID].ActionDesc
+			api.CustomTypes = allAPI[st.ActionID].CustomTypes
+		}
+		//Desc of request must before Desc of response
+		if st.isResp() {
+			api.RespFields = st.Fields
+			if st.Desc != "" && api.ActionDesc == "" {
+				api.ActionDesc = st.Desc
+			}
+		}
+		if st.isReq() {
+			api.ReqFields = st.Fields
+			if st.Desc != "" {
+				api.ActionDesc = st.Desc
+			}
+		}
+
+		api.ActionID = st.ActionID
+		for _, field := range st.Fields {
+			GetCustomTypes(api, field, pkg)
+			if api.ActionID == "" {
+				continue
+			}
+		}
+		allAPI[st.ActionID] = *api
+
+	}
+	return allAPI
+}
+
+// GetCustomTypes find custom struct type in api using deep search
+func GetCustomTypes(api *singleAPI, field *apiField, pkg []*structType) {
+	typeName := field.ValueType
+	if s := findTypeStruct(typeName, pkg); s != nil {
+		api.CustomTypes = append(api.CustomTypes, s)
+		for _, field := range s.Fields {
+			GetCustomTypes(api, field, pkg)
+		}
+	}
+}
+
+//pkgStructs collect all struct from giving package typePath
+func pkgStructs(pkgPath string) ([]*structType, map[string]string) {
+	resp := make([]*structType, 0)
+	files := common.ListDir(pkgPath, true, false)
+	imps := make(map[string]string)
+	for _, file := range files {
+		getReq := false
+		getResp := false
+		fileName := filepath.Base(file)
+		actionID, ok := FindActionID(fileName)
+		if !ok {
+			continue
+		}
+		//get package Name and struct
+		structs, imp := collectStructs(file)
+		for k, v := range imp {
+			imps[k] = v
+		}
+		for _, v := range structs {
+			// add empty filed in struct
+			if len(v.Fields) == 0 {
+				v.Fields = []*apiField{emptyField()}
+			}
+			if v.isReq() {
+				getReq = true
+				v.ActionID = actionID
+			}
+			if v.isResp() {
+				getResp = true
+				v.ActionID = actionID
+			}
+			resp = append(resp, v)
+		}
+		if !getReq {
+			defaultReq := defaultReq(actionID)
+			resp = append(resp, defaultReq)
+		}
+		if !getResp {
+			defaultResp := defaultResp(actionID)
+			resp = append(resp, defaultResp)
+		}
+	}
+	return resp, imps
+}
+
+func collectStructs(srcPath string) ([]*structType, map[string]string) {
+	allStruct := make([]*structType, 0)
+	if !strings.HasSuffix(srcPath, "go") {
+		return allStruct, nil
+	}
+	fs := token.NewFileSet()
+	f, err := parser.ParseFile(fs, srcPath, nil, parser.ParseComments)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var findStruct = func(n ast.Node) bool {
+		var structName string
+		var t ast.Expr
+		var structDec string
+		// get type specification
+		switch x := n.(type) {
+		case *ast.GenDecl:
+			if len(x.Specs) != 1 {
+				return true
+			}
+			structDec = x.Doc.Text()
+			switch xs := x.Specs[0].(type) {
+			case *ast.TypeSpec:
+				structName = xs.Name.Name
+				t = xs.Type
+				x, ok := t.(*ast.StructType)
+				if !ok {
+					return true
+				}
+				s := new(structType)
+				s.Name = structName
+				s.Fields = genField(x, srcPath)
+				s.SetDesc(structDec)
+				s.PkgName = f.Name.String()
+				allStruct = append(allStruct, s)
+			}
+		}
+		return true
+	}
+	ast.Inspect(f, findStruct)
+	imp := make(map[string]string)
+	for _, ff := range f.Imports {
+		name := ""
+		if ff.Name == nil {
+			fff, err := parser.ParseFile(fs, srcPath, nil, parser.ParseComments)
+			if err != nil {
+				log.Fatal(err)
+			}
+			name = fff.Name.String()
+		} else {
+			name = ff.Name.String()
+		}
+		//获取已经导入的包
+		projectName := strings.Split(ff.Path.Value[1:len(ff.Path.Value)-1], "/")[0]
+		imp[name] = common.FindProjectRoot(projectName) + ff.Path.Value[len(projectName)+1:]
+	}
+	return allStruct, imp
+}
+
+func genField(node *ast.StructType, srcPath string) []*apiField {
+	b, _ := ioutil.ReadFile(srcPath)
+	field := make([]*apiField, 0)
+	for _, f := range node.Fields.List {
+		newField := new(apiField)
+		//ignore invalid tag
+		if f.Tag != nil && strings.Contains(f.Tag.Value, TokenTag) {
+			tags := GetTag(f.Tag.Value, TokenTag)
+			newField.ParseTag(f, tags)
+		}
+		typeName := string(b)[f.Type.Pos()-1 : f.Type.End()-1]
+		newField.ValueType = typeName
+		newField.Name = f.Names[0].Name
+		if f.Comment.Text() != "" {
+			newField.SetDesc(f.Comment.Text())
+		} else {
+			newField.SetDesc(f.Doc.Text())
+		}
+		newField.Alias = newField.Name
+		field = append(field, newField)
+	}
+	return field
+}
+
+//helper function
+
+func emptyField() *apiField {
+	field := new(apiField)
+	field.Name = "无"
+	field.Alias = field.Name
+	field.ValueType = "无"
+	field.Desc = ""
+	field.Required = false
+	return field
+}
+
+//default request
+func defaultReq(aid string) *structType {
+	s := new(structType)
+	s.ActionID = aid
+	s.Name = "Default" + aid + "Params"
+	//roleID
+	rid := new(apiField)
+	rid.Name = "RoleId"
+	rid.Alias = rid.Name
+	rid.ValueType = "string"
+	rid.Required = true
+	rid.Desc = "角色id"
+	s.Fields = []*apiField{rid}
+	return s
+}
+
+func defaultResp(aid string) *structType {
+	s := new(structType)
+	s.ActionID = aid
+	s.Name = "Default" + aid + "Resp"
+	info := new(apiField)
+	info.Name = "Info"
+	info.Alias = info.Name
+	info.ValueType = "string"
+	code := new(apiField)
+	code.Name = "Code"
+	code.Alias = code.Name
+	code.ValueType = "int"
+	code.Desc = "0 成功， 1 失败"
+	s.Fields = []*apiField{info, code}
+	return s
+}
+
+func findTypeStruct(name string, pkg []*structType) *structType {
+	for _, s := range pkg {
+		if s.isType(name) {
+			return s
+		}
+	}
+	return nil
+}
+
+// GetTag find tag with specified token
+func GetTag(t string, tk string) string {
+	// tag = "`valid:"ass:xxx; sss""
+	tagStart := strings.Index(t, tk)
+	firstQ := strings.Index(t[tagStart:], `"`)
+	tagEnd := strings.Index(t[tagStart+firstQ+1:], `"`)
+	if tagEnd != -1 && tagStart != -1 {
+		return t[tagStart : tagStart+firstQ+tagEnd+2]
+	}
+	return ""
+}
+
+func unique(l []*structType) []*structType {
+	keys := make(map[string]bool)
+	newList := make([]*structType, 0)
+	for _, s := range l {
+		if _, v := keys[s.Name]; !v {
+			keys[s.Name] = true
+			newList = append(newList, s)
+		}
+	}
+	return newList
+}
+
+//FindActionID if find ActionID, return ActionID and identifier(bool)
+func FindActionID(s string) (string, bool) {
+	t := strings.Split(s, "_")
+	if t[len(t)-1] == "test" || t[len(t)-1] == "test.go" {
+		return "", false
+	}
+	re := regexp.MustCompile("[0-9]+")
+	res := re.FindAllString(s, -1)
+	if len(res) == 1 {
+		return res[0], true
+	}
+	return "", false
+}
+
+//CollectTypes 收集所有类型
+func CollectTypes(pkgPath string) ([]*decType, map[string]string) {
+	//allStruct := make([]*decType, 0)
+	//if !strings.HasSuffix(pkgPath, "go") {
+	//	return allStruct, nil
+	//}
+	astFiles := make([]*ast.File, 0)
+	files := common.ListDir(pkgPath, true, false)
+	fs := token.NewFileSet()
+	pkgName := ""
+	//imports
+
+	for _, f := range files {
+		if !strings.HasSuffix(f, "go") {
+			continue
+		}
+		pf, err := parser.ParseFile(fs, f, nil, parser.ParseComments)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pkgName = pf.Name.String()
+		astFiles = append(astFiles, pf)
+	}
+	println(pkgName)
+	conf := types.Config{Importer: importer.For("source", nil)}
+	info := &types.Info{Types: make(map[ast.Expr]types.TypeAndValue)}
+	//get all types
+	if _, err := conf.Check("pkg3", fs, astFiles, info); err != nil {
+		log.Fatal(err) // type error
+	}
+	//for k, t := range info.Types {
+	//	fmt.Printf("%v =%v\n", k, t.Type.String())
+	//}
+
+	ast.Inspect(astFiles[1], func(node ast.Node) bool {
+		switch x := node.(type) {
+		case *ast.TypeSpec:
+			st, ok := x.Type.(*ast.StructType)
+			if !ok {
+				//t := x.Type.(*ast.Ident)
+				//fmt.Printf("%s, %v\n", x.Name, t)
+				return true
+			}
+			expr, ok := x.Type.(ast.Expr)
+			if !ok {
+				log.Print("not expr\n")
+				return true
+			}
+			_, ok = info.Types[expr]
+			if !ok {
+				return true
+			}
+			//println(x.Name.String())
+			//fmt.Printf("%v\n", tv.Type)
+			for _, field := range st.Fields.List {
+				expr, ok := field.Type.(ast.Expr)
+				if !ok {
+					log.Fatal("not expr")
+				}
+				tv, ok := info.Types[expr]
+				if !ok {
+					log.Fatal("invalid field ", expr)
+				}
+				fmt.Printf("%s = %v\n", field.Names[0].String(), tv.Type)
+			}
+		}
+		return true
+	})
+	return nil, nil
+}
+
+func GetPackType(pkgPath string, typeNames []string) {
+
+}

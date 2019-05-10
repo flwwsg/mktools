@@ -1,0 +1,294 @@
+//do
+//created: 2018/8/30
+//author: wdj
+
+package do
+
+import (
+	"fmt"
+	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
+	"go/types"
+	"log"
+	"mktools/common"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+const (
+	tSlice = iota
+	tMap
+	tStruct
+	tBuiltin
+	tUnknown
+)
+
+type pkg struct {
+	name  string
+	types map[string]pkgType
+}
+
+type pkgType struct {
+	name  string
+	value string
+	//pkgName   string
+	valueType int
+	//type package path and type name
+	typePath string
+	typeName string
+	//comments description
+	desc   string
+	fields []pkgType
+}
+
+type apiStruct struct {
+	TypeName  string //name of struct
+	Desc      string //comments description
+	Fields    []apiField
+	ActionID  string
+	valueType types.Type
+}
+type apiNode struct {
+}
+type apiField struct {
+	FieldName   string
+	ValueType   types.Type
+	Desc        string
+	FieldType   int
+	pkgPath     string //third package path
+	pkgTypeName string //third package type name
+	Next        *apiField
+}
+
+//helper
+
+//GetPackageName get package name with given typePath
+func GetPackageName(pkgPath string) string {
+	files := ListPackageDir(pkgPath)
+	pkgName := ""
+	fs := token.NewFileSet()
+	for _, f := range files {
+		if !strings.HasSuffix(f, "go") {
+			continue
+		}
+		pf, err := parser.ParseFile(fs, f, nil, parser.PackageClauseOnly)
+		if err != nil {
+			continue
+		}
+		pkgName = pf.Name.String()
+		break
+	}
+	return pkgName
+}
+
+func ListPackageDir(pkgPath string) []string {
+	pkgPath = strings.Replace(pkgPath, "\\", "/", -1)
+	if len(strings.Split(pkgPath, "/")) == 1 {
+		//only package name
+		fullPath := common.FindProjectRoot(pkgPath)
+		return common.ListDir(fullPath, true, false)
+	} else {
+		for _, p := range common.GoPath() {
+			fullPath := filepath.Join(p, "src", pkgPath)
+			_, err := os.Stat(fullPath)
+			if err != nil {
+				continue
+			}
+			return common.ListDir(fullPath, true, false)
+		}
+		panic(fmt.Sprintf("can not find %s", pkgPath))
+	}
+}
+
+//GetPackageType get type name and type
+func GetPackageType(pkgPath string) map[string]pkgType {
+	astFiles := make([]*ast.File, 0)
+	files := ListPackageDir(pkgPath)
+	fs := token.NewFileSet()
+	pkg := new(pkg)
+	pkgName := ""
+	for _, f := range files {
+		if !strings.HasSuffix(f, "go") {
+			continue
+		}
+		pf, err := parser.ParseFile(fs, f, nil, parser.ParseComments)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pkgName = pf.Name.String()
+		astFiles = append(astFiles, pf)
+	}
+	conf := types.Config{Importer: importer.For("source", nil)}
+	info := &types.Info{Types: make(map[ast.Expr]types.TypeAndValue), Defs: make(map[*ast.Ident]types.Object)}
+	if pkgName == "" {
+		panic(fmt.Sprintf("no such package in %s", pkgPath))
+	}
+	//get all types
+	if _, err := conf.Check(pkgName, fs, astFiles, info); err != nil {
+		log.Fatal(err) // type error
+	}
+	pkg.name = pkgName
+	//filter api
+	apiList := make([]*apiStruct, 0)
+	for id, t := range info.Defs {
+		if t == nil {
+			continue
+		}
+		if isSpecifiedStruct(t) {
+			//get api struct
+			api := new(apiStruct)
+			api.TypeName = id.Name
+			api.valueType = t.Type()
+			apiList = append(apiList, api)
+		}
+	}
+	//fmt.Printf("%q\n", info.Defs)
+	//collect all current package types
+	for _, api := range apiList {
+		t := api.valueType.Underlying().(*types.Struct)
+		for i := 0; i < t.NumFields(); i++ {
+			f := t.Field(i)
+			newField := getNextField(pkgName, f.Type(), info.Defs)
+			api.Fields = append(api.Fields, *newField)
+		}
+	}
+	for _, api := range apiList {
+		fmt.Printf("%v\n", api.Fields)
+	}
+	return nil
+}
+
+func Imported(pkgPath string) map[string]string {
+	imps := map[string]string{}
+	pkgName := ""
+	for _, p := range common.GoPath() {
+		pp := filepath.Join(p, "src", pkgPath)
+		_, err := os.Stat(pp)
+		if err != nil {
+			continue
+		}
+		//find package
+		files := common.ListDir(pp, true, false)
+		fs := token.NewFileSet()
+		for _, f := range files {
+			if !strings.HasSuffix(f, "go") {
+				continue
+			}
+			pf, err := parser.ParseFile(fs, f, nil, parser.ImportsOnly)
+			if err != nil {
+				continue
+			}
+			pkgName = pf.Name.String()
+			for _, imp := range pf.Imports {
+				newPkgPath := imp.Path.Value[1 : len(imp.Path.Value)-1]
+				newPkgName := GetPackageName(newPkgPath)
+				if imp.Name != nil {
+					newPkgName = imp.Name.String()
+				}
+				imps[newPkgName] = newPkgPath
+			}
+		}
+		fmt.Printf("package named %s, %q\n", pkgName, imps)
+		return imps
+	}
+	panic(fmt.Sprintf("can not find package in %s", pkgPath))
+}
+
+func CheckType(t types.Type, currentPkg string) (pkgPath string, typeName string, valueType int) {
+	splitType := func(t string) (string, string) {
+		l := strings.Split(t, ".")
+		if len(l) == 1 {
+			//builtin
+			return ".", l[0]
+		}
+		if l[0] == currentPkg {
+			return ".", l[1]
+		}
+		return l[0], l[1]
+	}
+	switch x := t.(type) {
+	case *types.Slice:
+		pkgPath, typeName = splitType(x.Elem().String())
+		return pkgPath, typeName, tSlice
+	case *types.Map:
+		pkgPath, typeName = splitType(x.Elem().String())
+		return pkgPath, typeName, tMap
+	case *types.Named:
+		pkgPath, typeName = splitType(x.String())
+		return pkgPath, typeName, tUnknown
+	case *types.Basic:
+		return ".", x.Name(), tBuiltin
+	default:
+		panic(fmt.Sprintf("not supported type %s", x))
+	}
+}
+
+func getNextField(pkgName string, elem types.Type, info map[*ast.Ident]types.Object) *apiField {
+	for id, t := range info {
+		if t == nil || t.Type() != elem {
+			continue
+		}
+		newField := new(apiField)
+		newField.ValueType = t.Type()
+		newField.FieldName = id.Name
+		println("=========")
+		println("looking ", id.Name)
+		//if t.Pkg().Path() != pkgName {
+		//	newField.pkgTypeName = id.Name
+		//	newField.pkgPath = t.Pkg().Path()
+		//}
+		//fmt.Printf("%v, %s\n", t.Type(), t.Pkg().Path())
+		switch x := t.Type().Underlying().(type) {
+		case *types.Slice:
+			newField.FieldType = tSlice
+			newField.Next = getNextField(pkgName, x.Elem(), info)
+			return newField
+
+		//pkgPath, newTypeName := splitType(x.Elem().String())
+		//println(pkgPath, newTypeName)
+		case *types.Struct:
+			fmt.Printf("%v\n", x)
+			fields := make([]apiField, x.NumFields())
+			for i := 0; i < x.NumFields(); i++ {
+				f := x.Field(i)
+				field := getNextField(pkgName, f.Type(), info)
+				fields[i] = *field
+				fmt.Printf("%v\n", field)
+			}
+			//newField.Next = fields
+		case *types.Basic:
+			newField.FieldType = tBuiltin
+			return newField
+		default:
+			//fmt.Printf("%v\n", x)
+			panic("error")
+		}
+
+		return newField
+	}
+	return nil
+}
+
+func isSpecifiedStruct(t types.Object) bool {
+	name := t.Name()
+	_, ok := t.Type().Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	l := len(name)
+	r := len("Resp")
+	p := len("Params")
+	if l < p || l < r {
+		return false
+	}
+	if name[l-r:] == "Resp" {
+		return true
+	}
+	if name[l-p:] == "Params" {
+		return true
+	}
+	return false
+}

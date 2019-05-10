@@ -1,0 +1,177 @@
+{
+  "apiName": "adventure",
+  "apiType": "game",
+  "11001": {
+    "fileName": "enter",
+    "actName": "Enter",
+    "desc": "城堡界面",
+    "req": [],
+    "resp": [
+      [
+        "cityID",
+        "int",
+        "required",
+        "城堡id"
+      ],
+      [
+        "boxPos",
+        "[]int",
+        "required",
+        "所有宝箱地点"
+      ],
+      [
+        "blankPos",
+        "int",
+        "required",
+        "所有资源地点"
+      ],
+      [
+        "bossPos",
+        "int",
+        "required",
+        "boss点"
+      ]
+    ]
+  },
+  "11002": {
+    "fileName": "dispatch",
+    "actName": "dispatch",
+    "desc": "派遣骑士",
+    "req": [
+      [
+        "heroID",
+        "string",
+        "required",
+        "骑士id"
+      ]
+    ],
+    "resp": [
+    ]
+  },
+  "11003": {
+    "fileName": "enter_pos",
+    "actName": "enterPos",
+    "desc": "进入城堡地点",
+    "req": [
+      [
+        "posID",
+        "int",
+        "required",
+        "当前城堡地点ID"
+      ]
+    ],
+    "resp": [
+      [
+        "AwardList",
+        "[][]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ],
+      [
+        "BossStatus",
+        "int",
+        "required",
+        "boss 状态， -1 = 非boss点， 0 = 当天第一次遇见， 1 = 上次攻击boss认输，2 = 上次攻击boss失败， 3 = 上次攻击boss成功"
+      ]
+    ]
+  },
+  "11004": {
+    "fileName": "boss_award",
+    "actName": "bossAward",
+    "desc": "获取boss奖励",
+    "req": [
+      [
+        "Result",
+        "int",
+        "required",
+        "boss战结果, 1 = 认输， 2 =  失败， 3 = 成功"
+      ]
+    ],
+    "resp": [
+      [
+        "AwardList",
+        "[][]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ]
+    ]
+  },
+  "11005": {
+    "fileName": "next_city",
+    "actName": "NextCity",
+    "desc": "进入下一城堡",
+    "req": [
+      [
+        "posID",
+        "int",
+        "required",
+        "当前城堡地点ID"
+      ]
+    ],
+    "resp": [
+    ]
+  },
+  "11006": {
+    "fileName": "one_key_adventure",
+    "actName": "OneKeyAD",
+    "desc": "一键探险",
+    "req": [
+      [
+        "cityID",
+        "int",
+        "required",
+        "当前城堡ID"
+      ]
+    ],
+    "resp": [
+      [
+        "AwardList",
+        "[][]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ]
+    ]
+  },
+  "11030": {
+    "fileName": "knight_list",
+    "actName": "KList",
+    "desc": "获取所有骑士传列表",
+    "req": [
+    ],
+    "resp": [
+      [
+        "locked",
+        "[]int",
+        "required",
+        "未解锁的骑士传列表"
+      ],
+      [
+        "unLocked",
+        "[]int",
+        "required",
+        "已解锁的骑士传列表"
+      ]
+    ]
+  },
+  "11031": {
+    "fileName": "knight_award",
+    "actName": "KAward",
+    "desc": "获取骑士传奖励",
+    "req": [
+      [
+        "cityID",
+        "string",
+        "required",
+        "解锁的城堡id"
+      ]
+    ],
+    "resp": [
+      [
+        "AwardList",
+        "[][]int",
+        "required",
+        "奖励列表, 没有奖励时为空"
+      ]
+    ]
+  }
+}

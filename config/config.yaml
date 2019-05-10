@@ -1,0 +1,26 @@
+
+types:
+  intList: []int
+  int: int
+  string: string
+
+
+apiList:
+  - 99901
+#  - 99902
+#  - 99903
+
+apiName: demo
+apiType: admin
+
+99901:
+  fileName: demo
+  funName: adminTest2
+  funDesc: test
+  req:
+  # name, type, is_required, desc
+    cityID:
+      - int
+      - true
+      - 解锁的城堡id
+
