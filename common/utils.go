@@ -41,7 +41,17 @@ func ListDir(fpath string, fullPath bool, onlyDir bool) []string {
 
 // FindProjectRoot get project path from GOPATH
 func FindProjectRoot(name string) string {
-	for _, p := range GoPath() {
+	gopath := os.Getenv("GOPATH")
+	mulPath := make([]string, 0)
+	//check in windows
+	if runtime.GOOS == "windows" {
+		mulPath = strings.Split(gopath, ";")
+	} else if runtime.GOOS == "linux" {
+		//check in linux
+		mulPath = strings.Split(gopath, ":")
+	}
+
+	for _, p := range mulPath {
 		src := filepath.Join(p, "src")
 		dirs := ListDir(src, false, true)
 		if FindInList(name, dirs) {
@@ -51,16 +61,27 @@ func FindProjectRoot(name string) string {
 	panic(fmt.Sprintf("project named %s not found", name))
 }
 
-func GoPath() []string {
+//包路径
+func FullPackagePath(pkgPath string) string {
 	gopath := os.Getenv("GOPATH")
+	mulPath := make([]string, 0)
 	//check in windows
 	if runtime.GOOS == "windows" {
-		return strings.Split(gopath, ";")
+		mulPath = strings.Split(gopath, ";")
 	} else if runtime.GOOS == "linux" {
 		//check in linux
-		return strings.Split(gopath, ":")
+		mulPath = strings.Split(gopath, ":")
 	}
-	panic(fmt.Sprintf("%s does not supported", runtime.GOOS))
+
+	for _, p := range mulPath {
+		src := filepath.Join(p, "src")
+		fullPath := filepath.Join(src, pkgPath)
+		_, err := os.Stat(fullPath)
+		if err == nil || !os.IsNotExist(err) {
+			return fullPath
+		}
+	}
+	panic(fmt.Errorf("no such pacakge with path %s ", pkgPath))
 }
 
 //FindInList find item in given list

@@ -1,33 +1,39 @@
 package pkg3
 
-import (
-	//demo4 "mktools/mkmd/pkg2/demo2"
-	. "mktools/mkmd/pkg2/demo3"
-)
-
-/*
-Created on 2018-08-16 15:56:41
-author: Auto Generate
-*/
-
-////获取商品列表请求参数
-type GetStoreListParams struct {
+//接口功能说明如：登录
+type LoginParams struct {
+	//jwt描述
+	Jwt string `valid:"required"` //jwt描述2, 优先级更高
+	//user id 描述
+	UserId string `valid:"required"`
+	//device id 描述
+	DeviceId string `valid:"required"`
+	//device type 描述
+	DeviceType string `valid:"required"`
+	//device os 描述
+	DeviceOS string `valid:"required"`
+	//retail id 描述
+	RetailId string `valid:"required"`
+	//play second 描述
+	PlaySecond int `valid:"required"`
 }
 
-//获取商品列表响应
-type GetStoreListResp struct {
-	Items   []Item //商品列表
-	NewItem Item
+//接口功能说明(可选)如：登录
+type LoginResp struct {
+	//role 描述
+	Role Role
+	//system time 描述
+	SystemTime int64
 }
 
-type Item struct {
-	ItemNo       NoType //道具编号 = int16
-	Price        int    //价格
-	VipLvRequire int16  //vip等级要求
-	BuyLimit     int    //购买限制
-	ItemOrder    int    //商品排序
-	No           NotS
+type Role struct {
+	Id       string
+	ShowId   int
+	Nickname string
+	Sex      int16
+	Avatar   int16
+	Lv       int16
+	VipLv    int16
+	Exp      int
+	Gold     int64
 }
-
-////Nots
-type NotS int

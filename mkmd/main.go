@@ -4,16 +4,16 @@
 
 package main
 
-import "mktools/mkmd/do"
+import (
+	"mktools/mkmd/collect"
+)
 
 //var i = flag.String("in", "", "api directory to generate md file")
 
 func main() {
 	//find file path
-	//println(do.GenDoc("./mkmd/pkg3"))
-	p := "mktools/mkmd/pkg4"
-	//do.CollectTypes(p)
-	do.GetDeclType(p)
+	mk := collect.NewMaker("mktools/mkmd/pkg4")
+	print(mk.AsString())
 	//flag.Parse()
 	//if *i == "" {
 	//	flag.Usage()

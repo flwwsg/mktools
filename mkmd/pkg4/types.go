@@ -1,22 +1,16 @@
-//travelact
-//created: 2018-08-22 14:26:21
+//pkg4
+//created: 2018/9/17
 //author: wdj
-package pkg3
 
-//EnterMapResp 进入世界地图
-type EnterMapResp struct {
+package pkg4
 
-	//UnlockedCountry 已解锁国家
-	UnlockedCountry []CountryMap `valid:"required"`
-
-	//Act 行动力
-	Act ActInfo `valid:"required"`
-}
+import "mktools/mkmd/pkg5"
+import . "mktools/mkmd/pkg5"
 
 //CountryMap 国家列表
 type CountryMap struct {
 	//已解锁的国家Id
-	CountryId int
+	CountryID int
 	//所有委托事件
 	EntrustCityNum int
 	//HeroDispatch 英雄派遣信息列表
@@ -37,7 +31,7 @@ type DispatchInfo struct {
 	Dispatched int
 	//剩余可以派遣次数
 	RemainDispatched int
-}
-
-type DemoParams struct {
+	//info
+	Info  Info5
+	Info6 pkg5.Info6
 }

@@ -11,12 +11,10 @@ import (
 
 //before
 
-
 type ProfileCenter struct {
-DA []stat.DemoStatA
-DemoStatB []stat.DemoStatB
+	DA        []stat.DemoStatA
+	DemoStatB []stat.DemoStatB
 }
-
 
 //middle
 //? what

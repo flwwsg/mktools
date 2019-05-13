@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"mktools/common"
-	"mktools/mkact/do"
+	"mktool/common"
+	"mktool/mkact/do"
 	"os"
 	"os/exec"
 	"path"
@@ -18,7 +18,7 @@ import (
 
 func main() {
 	act := new(do.Act)
-	toolsPath := common.FindProjectRoot("mktools")
+	toolsPath := common.FindProjectRoot("mktool")
 	configPath := path.Join(toolsPath, "config", "config.json")
 	conf, _ := ioutil.ReadFile(configPath)
 	json.Unmarshal(conf, act)
@@ -30,6 +30,11 @@ func main() {
 	for _, api := range act.ApiList {
 		text := api.Text(act.PackageName())
 		filePath := path.Join(fullPath, api.GoFileName())
+		//ignore file exist
+		_, err := os.Open(filePath)
+		if err == nil {
+			continue
+		}
 		f, err := os.Create(filePath)
 		if err != nil {
 			panic(err)
@@ -45,8 +50,22 @@ func main() {
 		cmd := exec.Command("gofmt", "-w", filePath)
 		cmd.Run()
 	}
-	actionID := act.ApiList[0].ActionID[:3]
-	cmd := exec.Command("gen-doc.exe", "-d", act.ApiType, actionID, act.ApiName)
+	//write custom types
+	filePath := path.Join(fullPath, "types.go")
+	f, err := os.Create(filePath)
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(f, strings.NewReader(act.TypesText()))
+	if err != nil {
+		f.Close()
+		panic(err)
+	}
+	f.Close()
+	//execute  gofmt
+	cmd := exec.Command("gofmt", "-w", filePath)
+	cmd.Run()
+	cmd = exec.Command("gen-doc.exe", "-a")
 	cmd.Run()
 	// register act
 	do.RegisterAct(regPath, *act)

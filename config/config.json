@@ -1,46 +1,249 @@
 {
-  "apiName": "demo",
-  "apiType": "admin",
-  "99902": {
-    "fileName": "demo",
-    "actName": "adminTest2",
-    "desc": "test",
+  "12301": {
+    "fileName": "get_chat",
+    "desc": "获取聊天记录",
     "req": [
       [
-        "cityID",
+        "channel",
         "string",
-        "required",
-        "解锁的城堡id"
+        "聊天频道"
+      ],
+      [
+        "size",
+        "int",
+        "获取聊天记录条数"
+      ],
+      [
+        "time",
+        "int64",
+        "匹配该时间之前的聊天信息"
       ]
     ],
     "resp": [
       [
-        "award",
-        "[]int",
-        "required",
-        "奖励列表, 没有奖励时为空"
+        "ChatMsg",
+        "[]PushFormat",
+        "返回的聊天信息"
       ]
     ]
   },
-  "99903":{
-    "fileName": "demo",
-    "actName": "adminTest3",
-    "desc": "test",
+  "12302": {
+    "fileName": "add_chat",
+    "desc": "添加一条聊天记录",
     "req": [
       [
-        "cityID",
+        "channel",
+        "string",
+        "聊天频道"
+      ],
+      [
+        "msgType",
         "int",
-        "required",
-        "解锁的城堡id"
+        "聊天类型, 1=普通文字聊天,\t2=分享奖励,\t3=分享英雄,\t4=分享名媛,\t5=分享学员,\t6=联姻,\t7=击杀副本boss"
+      ],
+      [
+        "text",
+        "string",
+        "聊天信息,文字聊天时必填"
+      ],
+      [
+        "heroId",
+        "int",
+        "被分享的英雄, 分享英雄时必填"
+      ],
+      [
+        "beautyId",
+        "int",
+        "被分享的名媛, 分享名媛时必填"
+      ],
+      [
+        "studentId",
+        "int",
+        "被分享的学员, 分享学员或联姻时必填"
       ]
     ],
     "resp": [
       [
-        "award",
-        "[]int",
-        "required",
-        "奖励列表, 没有奖励时为空"
+        "ChatMsg",
+        "[]PushFormat",
+        "返回的聊天信息"
       ]
     ]
-  }
+  },
+  "12303": {
+    "fileName": "shield_role",
+    "desc": "屏蔽玩家",
+    "req": [
+      [
+        "shieldRole",
+        "string",
+        "被屏蔽的角色id"
+      ]
+    ],
+    "resp": []
+  },
+  "12304": {
+    "fileName": "remove_shield_role",
+    "desc": "解除屏蔽",
+    "req": [
+      [
+        "RemoveShieldRole",
+        "string",
+        "被屏蔽的角色id"
+      ]
+    ],
+    "resp": []
+  },
+  "12305": {
+    "fileName": "report_role",
+    "desc": "举报一个玩家",
+    "req": [
+      [
+        "msgId",
+        "string",
+        "消息id"
+      ],
+      [
+        "channel",
+        "string",
+        "频道"
+      ],
+      [
+        "reason",
+        "string",
+        "举报原因(举报类型为4，必填）"
+      ],
+      [
+        "reportType",
+        "string",
+        "举报类型（1垃圾广告，2不良言论，3侮辱谩骂，4其他原因)"
+      ]
+    ],
+    "resp": []
+  },
+  "12306": {
+    "fileName": "translate",
+    "desc": "翻译一条信息",
+    "req": [
+      [
+        "msgId",
+        "string",
+        "消息id"
+      ],
+      [
+        "channel",
+        "string",
+        "频道"
+      ],
+      [
+        "language",
+        "string",
+        "目标语言类型"
+      ]
+    ],
+    "resp": [
+      [
+        "source",
+        "string",
+        "翻译前的语言,消息id不存在返回空字符串"
+      ],
+      [
+        "text",
+        "string",
+        "翻译后的文本,消息id不存在返回空字符串"
+      ]
+    ]
+  },
+  "12307": {
+    "fileName": "gain_award",
+    "desc": "领取奖励",
+    "req": [
+      [
+        "awardId",
+        "string",
+        "奖励id"
+      ]
+    ],
+    "resp": [
+      [
+        "RemainList",
+        "[]contract.Remain",
+        "剩余道具"
+      ]
+    ]
+  },
+  "12320": {
+  "fileName": "student_info",
+  "desc": "学员信息",
+  "req": [
+    [
+      "targetRoleId",
+      "string",
+      "学员所属玩家"
+    ],
+    [
+      "studentId",
+      "string",
+      "学员id"
+    ]
+  ],
+  "resp": [
+  ]
+},
+  "apiName": "chat",
+  "apiType": "game",
+  "customTypes": [
+    {
+      "structName": "PlayerBaseInfo",
+      "desc": "派遣信息",
+      "fields": [
+        {
+          "name": "RoleId",
+          "type": "string",
+          "desc": "角色id"
+        },
+        {
+          "name": "ShowId",
+          "type": "string",
+          "desc": "角色编号"
+        },
+        {
+          "name": "NickName",
+          "type": "string",
+          "desc": "昵称"
+        },
+        {
+          "name": "Avatar",
+          "type": "int16",
+          "desc": "形象id"
+        },
+        {
+          "name": "VipLv",
+          "type": "int16",
+          "desc": "VIP等级"
+        },
+        {
+          "name": "Lv",
+          "type": "int16",
+          "desc": "角色等级"
+        },
+        {
+          "name": "AllianceId",
+          "type": "string",
+          "desc": "联盟id, 未加入时为空"
+        }
+      ]
+    },
+    {
+      "structName": "ShareBossKill",
+      "desc": "分享击杀boss格式",
+      "fields": [
+        {
+          "name": "Killer",
+          "type": "string",
+          "desc": "击杀玩家id"
+        }
+      ]
+    }
+  ]
 }

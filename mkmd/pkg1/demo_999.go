@@ -8,3 +8,7 @@ type Demo999Resp struct {
 	RID    string `dcapi:"req; def:rid12"`
 	ID2    string `dcapi:"resp"`
 }
+
+type DemoXX struct {
+	DD int
+}

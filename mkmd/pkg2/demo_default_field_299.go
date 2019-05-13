@@ -5,8 +5,8 @@
 package pkg2
 
 //接口功能说明(可选)如：登录
-type EmptyParams struct {
+type EmptytParams struct {
 }
 
-type EmptyResp struct {
+type EmptytResp struct {
 }

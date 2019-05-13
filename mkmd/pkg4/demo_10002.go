@@ -1,4 +1,4 @@
-package pkg3
+package pkg4
 
 import demo4 "mktools/mkmd/pkg2/demo2"
 
