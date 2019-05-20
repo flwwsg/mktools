@@ -133,6 +133,9 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 				ps.allStructs[key] = s
 				// TODO 查找实现 api 的接口
 			}
+		case *ast.FuncDecl:
+			println(x.Body.List)
+			println(x.Name.String())
 		}
 		return true
 	}
@@ -217,49 +220,50 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) common.NewType {
 	}
 }
 
-//判断接口是否实现
-func init() {
-	fullPath := common.FullPackagePath("github.com/funny/fastapi")
-	files := common.ListDir(fullPath, true, false)
-	allFiles := make([]*ast.File, 0)
-	fset := token.NewFileSet()
-	for i := range files {
-		fileName := files[i]
-		if !strings.HasSuffix(fileName, "go") {
-			//非go文件
-			continue
-		}
-		f, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
-		if err != nil {
-			log.Fatal(err)
-		}
-		allFiles = append(allFiles, f)
-	}
-
-	//implemented types.Interface
-	typeConf := types.Config{Importer: importer.Default()}
-	pkg, _ := typeConf.Check("", fset, allFiles, nil)
-	var allNamed []*types.Named
-	for _, name := range pkg.Scope().Names() {
-		if obj, ok := pkg.Scope().Lookup(name).(*types.TypeName); ok {
-			allNamed = append(allNamed, obj.Type().(*types.Named))
-		}
-	}
-
-	// Test assignability of all distinct pairs of
-	// named types (T, U) where U is an interface.
-	for _, T := range allNamed {
-		println(T.String())
-		//for _, U := range allNamed {
-		//	if T == U || !types.IsInterface(U) {
-		//		continue
-		//	}
-		//	if types.AssignableTo(T, U) {
-		//		fmt.Printf("%s satisfies %s\n", T, U)
-		//	} else if !types.IsInterface(T) &&
-		//		types.AssignableTo(types.NewPointer(T), U) {
-		//		fmt.Printf("%s satisfies %s\n", types.NewPointer(T), U)
-		//	}
-		//}
-	}
-}
+//
+////判断接口是否实现
+//func init() {
+//	fullPath := common.FullPackagePath("github.com/funny/fastapi")
+//	files := common.ListDir(fullPath, true, false)
+//	allFiles := make([]*ast.File, 0)
+//	fset := token.NewFileSet()
+//	for i := range files {
+//		fileName := files[i]
+//		if !strings.HasSuffix(fileName, "go") {
+//			//非go文件
+//			continue
+//		}
+//		f, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		allFiles = append(allFiles, f)
+//	}
+//
+//	//implemented types.Interface
+//	typeConf := types.Config{Importer: importer.Default()}
+//	pkg, _ := typeConf.Check("", fset, allFiles, nil)
+//	var allNamed []*types.Named
+//	for _, name := range pkg.Scope().Names() {
+//		if obj, ok := pkg.Scope().Lookup(name).(*types.TypeName); ok {
+//			allNamed = append(allNamed, obj.Type().(*types.Named))
+//		}
+//	}
+//
+//	// Test assignability of all distinct pairs of
+//	// named types (T, U) where U is an interface.
+//	for _, T := range allNamed {
+//		println(T.String())
+//		//for _, U := range allNamed {
+//		//	if T == U || !types.IsInterface(U) {
+//		//		continue
+//		//	}
+//		//	if types.AssignableTo(T, U) {
+//		//		fmt.Printf("%s satisfies %s\n", T, U)
+//		//	} else if !types.IsInterface(T) &&
+//		//		types.AssignableTo(types.NewPointer(T), U) {
+//		//		fmt.Printf("%s satisfies %s\n", types.NewPointer(T), U)
+//		//	}
+//		//}
+//	}
+//}
