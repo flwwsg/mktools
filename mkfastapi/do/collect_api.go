@@ -134,6 +134,7 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 				// TODO 查找实现 api 的接口
 			}
 		case *ast.FuncDecl:
+			//TODO use function
 			println(x.Body.List)
 			println(x.Name.String())
 		}
