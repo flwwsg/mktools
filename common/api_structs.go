@@ -1,9 +1,6 @@
 package common
 
 import (
-	"go/ast"
-	"go/token"
-	"go/types"
 	"strings"
 )
 
@@ -37,18 +34,18 @@ type NewType struct {
 	Value string
 }
 
-// PkgStructs package 下的所有结构体
-type PkgStructs struct {
-	//文件路径
-	pkgPath    string
-	info       *types.Info
-	allStructs map[string]*StructType
-	scope      *types.Scope
-	fset       *token.FileSet
-	//是否存在请求、响应结构体
-	getReq  bool
-	getResp bool
-}
+//// PkgStructs package 下的所有结构体
+//type PkgStructs struct {
+//	//文件路径
+//	pkgPath    string
+//	info       *types.Info
+//	allStructs map[string]*StructType
+//	scope      *types.Scope
+//	fset       *token.FileSet
+//	//是否存在请求、响应结构体
+//	getReq  bool
+//	getResp bool
+//}
 
 func (field *ApiField) SetDesc(s string) {
 	desc := strings.Replace(s, field.Name, "", 1)
@@ -56,34 +53,34 @@ func (field *ApiField) SetDesc(s string) {
 	field.Desc = strings.TrimSpace(desc)
 }
 
-// IsValidTag check tag is valid or not
-func (field *ApiField) IsValidTag(t string) bool {
-	return !strings.Contains(t, "-")
-}
-
-//ParseTag handle tag
-func (field *ApiField) ParseTag(f *ast.Field, t string) {
-	// t = "valid: \"Required, xxx\""
-	if !field.IsValidTag(t) {
-		return
-	}
-	t = t[strings.Index(t, "\"")+1 : strings.LastIndex(t, "\"")]
-	fields := strings.Split(t, ",")
-	field.Required = false
-	for _, f := range fields {
-		f = strings.TrimSpace(f)
-		if f == "" {
-			continue
-		}
-		switch f {
-		case "required":
-			field.Required = true
-		case "optional":
-		default:
-			continue
-		}
-	}
-}
+//// IsValidTag check tag is valid or not
+//func (field *ApiField) IsValidTag(t string) bool {
+//	return !strings.Contains(t, "-")
+//}
+//
+////ParseTag handle tag
+//func (field *ApiField) ParseTag(f *ast.Field, t string) {
+//	// t = "valid: \"Required, xxx\""
+//	if !field.IsValidTag(t) {
+//		return
+//	}
+//	t = t[strings.Index(t, "\"")+1 : strings.LastIndex(t, "\"")]
+//	fields := strings.Split(t, ",")
+//	field.Required = false
+//	for _, f := range fields {
+//		f = strings.TrimSpace(f)
+//		if f == "" {
+//			continue
+//		}
+//		switch f {
+//		case "required":
+//			field.Required = true
+//		case "optional":
+//		default:
+//			continue
+//		}
+//	}
+//}
 
 func (field *ApiField) SetKey(key string) {
 	field.key = key

@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"mktool/common"
-	"mktool/mkact/do"
+	"mktools/common"
+	"mktools/mkact/do"
 	"os"
 	"os/exec"
 	"path"
@@ -18,7 +18,7 @@ import (
 
 func main() {
 	act := new(do.Act)
-	toolsPath := common.FindProjectRoot("mktool")
+	toolsPath := common.FindProjectRoot("mktools")
 	configPath := path.Join(toolsPath, "config", "config.json")
 	conf, _ := ioutil.ReadFile(configPath)
 	json.Unmarshal(conf, act)
