@@ -295,6 +295,6 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		return nil
 	default:
 		t = typeToCheck.(*ast.Ident)
-		panic(fmt.Errorf("%v", t))
+		panic(fmt.Errorf("需要新增类型 %v", t))
 	}
 }

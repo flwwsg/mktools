@@ -2,7 +2,6 @@ package do
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"mktools/common"
 	"sort"
@@ -91,9 +90,6 @@ func (maker *ApiMaker) Parse() {
 		}
 	}
 	maker.genAPI()
-	for k, v := range maker.allAPI {
-		fmt.Printf("%s, %v\n", k, v)
-	}
 }
 
 //生成当前模块下接口文件
