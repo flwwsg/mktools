@@ -15,15 +15,29 @@ import (
 	"go/ast"
 )
 
-//var provider fastapi.Provider
+const apiStructKey = "github.com/funny/fastapi.APIs"
+const apiFuncName = "APIs"
 
-type FastApiField struct {
+type FastField struct {
 	common.ApiField
 }
 
 type FastStructType struct {
 	common.StructType
+	//所属 api 的模块
+	APIPkg string
+	isReq  bool
+	isResp bool
 	//isProvider bool // 是否实现了 fastapi.Provider 接口
+}
+
+type apiFunc struct {
+	//接收函数
+	recv *common.NewType
+	//请求
+	req map[string]*common.NewType
+	//响应
+	resp map[string]*common.NewType
 }
 
 //包下的结构体
@@ -34,33 +48,25 @@ type FastPkgStructs struct {
 	allStructs map[string]*FastStructType
 	scope      *types.Scope
 	fset       *token.FileSet
+	//api 接口的struct
+	api apiFunc
+}
+
+func (st FastStructType) IsReq() bool {
+	return st.isReq
+}
+
+func (st FastStructType) IsResp() bool {
+	return st.isResp
 }
 
 //不需要标签
-func (api FastApiField) IsValidTag(t string) bool {
+func (api FastField) IsValidTag(t string) bool {
 	return false
 }
 
 func NewPkgStructs(srcPath string) FastPkgStructs {
 	return FastPkgStructs{pkgPath: srcPath, allStructs: make(map[string]*FastStructType), fset: token.NewFileSet()}
-}
-
-func (ps *FastPkgStructs) GetRequiredStruct() {
-	//var allNamed []*types.Named
-	//for _, name := range ps.scope.Names() {
-	//	if obj, ok := ps.scope.Lookup(name).(*types.TypeName); ok {
-	//		allNamed = append(allNamed, obj.Type().(*types.Named))
-	//	}
-	//}
-	//for _, T := range allNamed {
-	//	for i := 0; i < T.NumMethods(); i++ {
-	//		m := T.Method(i)
-	//		println(m.String())
-	//		println(m.FullName())
-	//		println(m.Name())
-	//		println(m.Pkg().Name())
-	//	}
-	//}
 }
 
 //Parse 使用go/types收集
@@ -131,19 +137,69 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 				//路径+类型名
 				key := ps.pkgPath + "." + s.Name
 				ps.allStructs[key] = s
-				// TODO 查找实现 api 的接口
 			}
 		case *ast.FuncDecl:
-			//TODO use function
-			println(x.Body.List)
-			println(x.Name.String())
+			//collecting function
+			// 查找函数类似
+			//	func (adv *Adventure) APIs() fastapi.APIs {
+			//	return fastapi.APIs{
+			//	0: {AdventureInfoIn{}, AdventureInfoOut{}},
+			//	1: {StartAdventureIn{}, StartAdventureOut{}},
+			//}
+			//}
+			if x.Type.Results == nil || len(x.Type.Params.List) != 0 || len(x.Type.Results.List) != 1 || x.Name.String() != apiFuncName || ps.checkTypes(x.Type.Results.List[0].Type).Key != apiStructKey {
+				//没有返回，非空请求参数，多个返回值，函数名不为api，返回参数类型不为github.com/funny/fastapi.APIs
+				return true
+			}
+			api := new(apiFunc)
+			api.recv = ps.checkTypes(x.Recv.List[0].Type)
+			api.req = make(map[string]*common.NewType)
+			api.resp = make(map[string]*common.NewType)
+			for _, v := range x.Body.List {
+				switch xv := v.(type) {
+				case *ast.ReturnStmt:
+					//返回声明
+					for _, vv := range xv.Results {
+						switch vvv := vv.(type) {
+						case *ast.CompositeLit:
+							//key value
+							for _, v := range vvv.Elts {
+								//类型不对，会panic， 不需要检测
+								kv := v.(*ast.KeyValueExpr)
+								tk := ps.checkTypes(kv.Key)
+								tv := kv.Value.(*ast.CompositeLit)
+								var reqStruct *common.NewType
+								var respStruct *common.NewType
+								_, ok := tv.Elts[0].(*ast.Ident)
+								if !ok {
+									//not nil
+									req := tv.Elts[0].(*ast.CompositeLit)
+									reqStruct = ps.checkTypes(req.Type)
+								}
+								_, ok = tv.Elts[1].(*ast.Ident)
+								if !ok {
+									//not nil
+									resp := tv.Elts[1].(*ast.CompositeLit)
+									respStruct = ps.checkTypes(resp.Type)
+								}
+								api.req[tk.Value] = reqStruct
+								api.resp[tk.Value] = respStruct
+							}
+							ps.api = *api
+							return true
+						default:
+							panic("unsupported type")
+						}
+					}
+				default:
+					panic("unsupported type")
+				}
+
+			}
 		}
 		return true
 	}
 	ast.Inspect(f, findStruct)
-	//for i, v := range ps.allStructs {
-	//	fmt.Printf("%v, %v\n", i, v)
-	//}
 }
 
 func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []common.ApiField {
@@ -170,7 +226,7 @@ func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []commo
 }
 
 //检查类型
-func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) common.NewType {
+func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 	switch t := typeToCheck.(type) {
 	case *ast.Ident:
 		obj := ps.info.ObjectOf(t)
@@ -185,7 +241,7 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) common.NewType {
 				newType.Key = newType.PkgPath + "." + newType.TypeName
 			}
 		}
-		return *newType
+		return newType
 	case *ast.SelectorExpr:
 		//其它包里面的类型， 如x.t
 		return ps.checkTypes(t.Sel)
@@ -201,8 +257,11 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) common.NewType {
 			newType.TypeName = fmt.Sprintf("[%s]"+elemType.TypeName, v)
 		}
 		newType.PkgPath = elemType.PkgPath
-		newType.Key = elemType.PkgPath + "." + elemType.TypeName
-		return *newType
+		if elemType.PkgPath != "" {
+			//自定义结构体
+			newType.Key = elemType.PkgPath + "." + elemType.TypeName
+		}
+		return newType
 	case *ast.MapType:
 		k := ps.checkTypes(t.Key)
 		v := ps.checkTypes(t.Value)
@@ -210,61 +269,19 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) common.NewType {
 		newType.TypeName = fmt.Sprintf("map[%s]%s", k.TypeName, v.TypeName)
 		newType.PkgPath = v.PkgPath
 		newType.Key = v.Key
-		return *newType
+		return newType
 	case *ast.StarExpr:
 		//引用类型
 		return ps.checkTypes(t.X)
+	case *ast.BasicLit:
+		newType := new(common.NewType)
+		newType.TypeName = t.Kind.String()
+		newType.PkgPath = ""
+		newType.Key = newType.TypeName
+		newType.Value = t.Value
+		return newType
 	default:
 		t = typeToCheck.(*ast.Ident)
 		panic(fmt.Errorf("%v", t))
-
 	}
 }
-
-//
-////判断接口是否实现
-//func init() {
-//	fullPath := common.FullPackagePath("github.com/funny/fastapi")
-//	files := common.ListDir(fullPath, true, false)
-//	allFiles := make([]*ast.File, 0)
-//	fset := token.NewFileSet()
-//	for i := range files {
-//		fileName := files[i]
-//		if !strings.HasSuffix(fileName, "go") {
-//			//非go文件
-//			continue
-//		}
-//		f, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
-//		if err != nil {
-//			log.Fatal(err)
-//		}
-//		allFiles = append(allFiles, f)
-//	}
-//
-//	//implemented types.Interface
-//	typeConf := types.Config{Importer: importer.Default()}
-//	pkg, _ := typeConf.Check("", fset, allFiles, nil)
-//	var allNamed []*types.Named
-//	for _, name := range pkg.Scope().Names() {
-//		if obj, ok := pkg.Scope().Lookup(name).(*types.TypeName); ok {
-//			allNamed = append(allNamed, obj.Type().(*types.Named))
-//		}
-//	}
-//
-//	// Test assignability of all distinct pairs of
-//	// named types (T, U) where U is an interface.
-//	for _, T := range allNamed {
-//		println(T.String())
-//		//for _, U := range allNamed {
-//		//	if T == U || !types.IsInterface(U) {
-//		//		continue
-//		//	}
-//		//	if types.AssignableTo(T, U) {
-//		//		fmt.Printf("%s satisfies %s\n", T, U)
-//		//	} else if !types.IsInterface(T) &&
-//		//		types.AssignableTo(types.NewPointer(T), U) {
-//		//		fmt.Printf("%s satisfies %s\n", types.NewPointer(T), U)
-//		//	}
-//		//}
-//	}
-//}

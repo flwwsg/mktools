@@ -33,6 +33,8 @@ type NewType struct {
 	PkgPath string
 	//键值
 	Key string
+	//basic value
+	Value string
 }
 
 // PkgStructs package 下的所有结构体
@@ -87,6 +89,10 @@ func (field *ApiField) SetKey(key string) {
 	field.key = key
 }
 
+func (field ApiField) GetKey() string {
+	return field.key
+}
+
 func (s *StructType) SetDesc(comm string) {
 	//drop struct Name
 	desc := strings.Replace(comm, s.Name, "", 1)
@@ -97,4 +103,9 @@ func (s *StructType) SetDesc(comm string) {
 //包含包名的类型名
 func (s StructType) FullName() string {
 	return s.PkgPath + "." + s.Name
+}
+
+//print
+func (nt NewType) String() string {
+	return nt.Key
 }

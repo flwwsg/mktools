@@ -1,8 +1,6 @@
 package adv
 
 import (
-	"mktools/mkmd/pkg1"
-
 	"github.com/funny/fastapi"
 )
 
@@ -12,8 +10,8 @@ type Adventure struct {
 
 func (adv *Adventure) APIs() fastapi.APIs {
 	return fastapi.APIs{
-		0: {AdventureInfoIn{}, AdventureInfoOut{}},
-		1: {StartAdventureIn{}, StartAdventureOut{}},
+		0: {nil, AdventureInfoOut{}},
+		1: {StartAdventureIn{}, nil},
 	}
 }
 
@@ -33,7 +31,5 @@ type StartAdventureIn struct {
 }
 
 type StartAdventureOut struct {
-	AdventureState pkg1.DemoXX      // 队伍状态
-	Players        pkg1.Demo999Resp // 初始玩家
-	TeamProcess    int8             // 队伍实时状态
+	TeamProcess int8 // 队伍实时状态
 }

@@ -73,10 +73,6 @@ func NewMaker(apiPath string) ApiMaker {
 	return ApiMaker{apiPath: apiPath, allStruct: make(map[string]*StructType), allAPI: make(map[string]SingleAPI), inStruct: make(map[string]bool)}
 }
 
-func (maker *ApiMaker) SetApiPath(apiPath string) {
-	maker.apiPath = apiPath
-}
-
 //解析需要的结构体
 func (maker *ApiMaker) Parse() {
 	//确定接口需要的结构体
