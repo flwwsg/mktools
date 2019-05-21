@@ -220,12 +220,24 @@ func (maker *ApiMaker) genAPI() map[string]SingleAPI {
 		}
 		//Desc of request must before Desc of response
 		if v.IsResp() {
+			if api.ActionDesc == "" {
+				api.ActionDesc = v.Desc
+			}
 			api.StructOutName = v.Name
 			api.RespFields = v.Fields
+			if len(api.RespFields) == 0 {
+				api.RespFields = []common.ApiField{*emptyAPIField()}
+			}
 		}
 		if v.IsReq() {
+			if v.Desc != "" {
+				api.ActionDesc = v.Desc
+			}
 			api.StructInName = v.Name
 			api.ReqFields = v.Fields
+			if len(api.ReqFields) == 0 {
+				api.ReqFields = []common.ApiField{*emptyAPIField()}
+			}
 		}
 		api.ActionID = actionID
 		maker.collectCustomTypes(api, v.Fields)

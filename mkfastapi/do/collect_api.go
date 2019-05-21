@@ -203,10 +203,10 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 }
 
 func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []common.ApiField {
-	field := make([]common.ApiField, 0)
+	var field []common.ApiField
 	for i := range node.Fields.List {
 		f := node.Fields.List[i]
-		if !ast.IsExported(f.Names[0].Name) {
+		if f.Names == nil || !ast.IsExported(f.Names[0].Name) {
 			continue
 		}
 		newField := new(common.ApiField)
@@ -217,6 +217,9 @@ func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []commo
 			newField.SetDesc(f.Doc.Text())
 		}
 		nt := ps.checkTypes(f.Type)
+		if nt == nil {
+			continue
+		}
 		newField.TypeName = nt.TypeName
 		newField.PkgPath = nt.PkgPath
 		newField.SetKey(nt.Key)
@@ -280,6 +283,16 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		newType.Key = newType.TypeName
 		newType.Value = t.Value
 		return newType
+	case *ast.StructType:
+		//t := map[string]struct {}
+		newType := new(common.NewType)
+		newType.TypeName = "struct"
+		newType.PkgPath = ""
+		newType.Key = ""
+		newType.Value = "struct{}"
+		return newType
+	case *ast.FuncType:
+		return nil
 	default:
 		t = typeToCheck.(*ast.Ident)
 		panic(fmt.Errorf("%v", t))
