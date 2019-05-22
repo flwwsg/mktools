@@ -77,8 +77,8 @@ func (ps *FastPkgStructs) Parse() {
 
 	for i := range files {
 		fileName := files[i]
-		if !strings.HasSuffix(fileName, "go") {
-			//非go文件
+		if !strings.HasSuffix(fileName, "go") || strings.HasSuffix(fileName, "_test.go") {
+			//非go文件， 测试文件
 			return
 		}
 		f, err := parser.ParseFile(ps.fset, fileName, nil, parser.ParseComments)
@@ -192,7 +192,8 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 						}
 					}
 				default:
-					panic("unsupported type")
+					return true
+					//panic("unsupported type")
 				}
 
 			}
