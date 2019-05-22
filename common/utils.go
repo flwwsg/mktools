@@ -32,7 +32,7 @@ func ListDir(fpath string, fullPath bool, onlyDir bool) []string {
 			fileName = f.Name()
 		}
 		if f.IsDir() == onlyDir {
-			//list only dir or only file
+			// list only dir or only file
 			dirs = append(dirs, fileName)
 		}
 	}
@@ -43,11 +43,11 @@ func ListDir(fpath string, fullPath bool, onlyDir bool) []string {
 func FindProjectRoot(name string) string {
 	gopath := os.Getenv("GOPATH")
 	mulPath := make([]string, 0)
-	//check in windows
+	// check in windows
 	if runtime.GOOS == "windows" {
 		mulPath = strings.Split(gopath, ";")
-	} else if runtime.GOOS == "linux" {
-		//check in linux
+	} else {
+		// check in linux or mac
 		mulPath = strings.Split(gopath, ":")
 	}
 
@@ -61,15 +61,15 @@ func FindProjectRoot(name string) string {
 	panic(fmt.Sprintf("project named %s not found", name))
 }
 
-//包路径
+// 包路径
 func FullPackagePath(pkgPath string) string {
 	gopath := os.Getenv("GOPATH")
 	mulPath := make([]string, 0)
-	//check in windows
+	// check in windows
 	if runtime.GOOS == "windows" {
 		mulPath = strings.Split(gopath, ";")
-	} else if runtime.GOOS == "linux" {
-		//check in linux
+	} else {
+		// check in linux or mac
 		mulPath = strings.Split(gopath, ":")
 	}
 
@@ -84,7 +84,7 @@ func FullPackagePath(pkgPath string) string {
 	panic(fmt.Errorf("no such pacakge with path %s ", pkgPath))
 }
 
-//FindInList find item in given list
+// FindInList find item in given list
 func FindInList(item interface{}, list interface{}) bool {
 	switch t := reflect.TypeOf(list).Kind(); t {
 	case reflect.Slice:
@@ -99,4 +99,13 @@ func FindInList(item interface{}, list interface{}) bool {
 	}
 
 	return false
+}
+
+func SaveFile(fileName string, textString string, isForce bool) error {
+	_, err := os.Stat(fileName)
+	if os.IsExist(err) && !isForce {
+		// 文件存在且不覆盖
+		return os.ErrExist
+	}
+	return ioutil.WriteFile(fileName, []byte(textString), os.ModePerm)
 }

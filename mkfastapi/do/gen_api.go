@@ -98,6 +98,9 @@ func (maker *ApiMaker) AsString() string {
 		maker.Parse()
 	}
 	allAPI := maker.allAPI
+	if len(allAPI) == 0 {
+		return ""
+	}
 	rtn := make([]string, len(allAPI)+1)
 	idx := make([]int, len(allAPI))
 	i := 0
@@ -179,7 +182,7 @@ func (maker *ApiMaker) collectStructs(pkgPath string) {
 	maker.apiStruct = apiStruct
 }
 
-//确定结构体字段的类型
+// 确定结构体字段的类型
 func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	_, ok := maker.allStruct[key]
 	if ok || key == "" {
@@ -188,7 +191,7 @@ func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	maker.collectStructs(pkgPath)
 	s := maker.allStruct[key]
 	if s == nil {
-		//not struct type
+		// not struct type
 		return
 	}
 	for _, field := range s.Fields {
@@ -196,7 +199,7 @@ func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	}
 }
 
-//genAPI generating single api with ActionID
+// genAPI generating single api with ActionID
 func (maker *ApiMaker) genAPI() map[string]SingleAPI {
 	if len(maker.allAPI) != 0 {
 		return maker.allAPI
@@ -214,7 +217,7 @@ func (maker *ApiMaker) genAPI() map[string]SingleAPI {
 			api.StructInName = st.StructInName
 			api.StructOutName = st.StructOutName
 		}
-		//Desc of request must before Desc of response
+		// Desc of request must before Desc of response
 		if v.IsResp() {
 			if api.ActionDesc == "" {
 				api.ActionDesc = v.Desc
