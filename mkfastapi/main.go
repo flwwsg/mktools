@@ -16,7 +16,7 @@ func main() {
 		flag.Usage()
 	}
 	println(module, mkdoc, out)
-	// m := do.NewMaker("mktools/mkfastapi/dq")
+	// m := do.NewMaker("game_server/module/chat")
 	// println(m.AsString())
 	fpath := common.FullPackagePath("game_server/module")
 	dirs := common.ListDir(fpath, false, true)
@@ -28,6 +28,4 @@ func main() {
 		m := do.NewMaker("game_server/module/" + d)
 		println(m.AsString())
 	}
-	m := do.NewMaker("game_server/module/adventure")
-	println(m.AsString())
 }
