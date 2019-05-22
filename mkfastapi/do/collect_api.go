@@ -333,6 +333,14 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		return newType
 	case *ast.FuncType:
 		return nil
+	case *ast.InterfaceType:
+		// 暂时不支持
+		newType := new(common.NewType)
+		newType.TypeName = "interface"
+		newType.PkgPath = ""
+		newType.Key = ""
+		newType.Value = "interface{}"
+		return newType
 	default:
 		t = typeToCheck.(*ast.Ident)
 		panic(fmt.Errorf("需要新增类型 %v", t))

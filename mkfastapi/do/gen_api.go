@@ -10,13 +10,13 @@ import (
 	"text/template"
 )
 
-//生成 api 文档
+// 生成 api 文档
 
 // APITemplate template of md
 const APITemplate = `
 ### {{.ActionID}} {{.ActionDesc}}
 
-#### 请求 {{.StructInName}}
+#### {{.StructInName}}
 
 字段|类型|描述|
 ---|---|---
@@ -24,7 +24,7 @@ const APITemplate = `
 {{- $f.Name}} | {{$f.TypeName | printf "%s" }}| {{printDesc $f.Desc }}
 {{end}}
 
-#### 响应 {{.StructOutName}}
+#### {{.StructOutName}}
 
 字段|类型|描述|
 ---|---|---
