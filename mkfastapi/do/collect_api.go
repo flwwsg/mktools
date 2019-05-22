@@ -24,31 +24,31 @@ type FastField struct {
 
 type FastStructType struct {
 	common.StructType
-	//所属 api 的模块
+	// 所属 api 的模块
 	APIPkg string
 	isReq  bool
 	isResp bool
-	//isProvider bool // 是否实现了 fastapi.Provider 接口
+	// isProvider bool // 是否实现了 fastapi.Provider 接口
 }
 
 type apiFunc struct {
-	//接收函数
+	// 接收函数
 	recv *common.NewType
-	//请求
+	// 请求
 	req map[string]*common.NewType
-	//响应
+	// 响应
 	resp map[string]*common.NewType
 }
 
-//包下的结构体
+// 包下的结构体
 type FastPkgStructs struct {
-	//文件路径
+	// 文件路径
 	pkgPath    string
 	info       *types.Info
 	allStructs map[string]*FastStructType
 	scope      *types.Scope
 	fset       *token.FileSet
-	//api 接口的struct
+	// api 接口的struct
 	api apiFunc
 }
 
@@ -60,7 +60,7 @@ func (st FastStructType) IsResp() bool {
 	return st.isResp
 }
 
-//不需要标签
+// 不需要标签
 func (api FastField) IsValidTag(t string) bool {
 	return false
 }
@@ -69,7 +69,7 @@ func NewPkgStructs(srcPath string) FastPkgStructs {
 	return FastPkgStructs{pkgPath: srcPath, allStructs: make(map[string]*FastStructType), fset: token.NewFileSet()}
 }
 
-//Parse 使用go/types收集
+// Parse 使用go/types收集
 func (ps *FastPkgStructs) Parse() {
 	fullPath := common.FullPackagePath(ps.pkgPath)
 	files := common.ListDir(fullPath, true, false)
@@ -78,7 +78,7 @@ func (ps *FastPkgStructs) Parse() {
 	for i := range files {
 		fileName := files[i]
 		if !strings.HasSuffix(fileName, "go") || strings.HasSuffix(fileName, "_test.go") {
-			//非go文件， 测试文件
+			// 非go文件， 测试文件
 			return
 		}
 		f, err := parser.ParseFile(ps.fset, fileName, nil, parser.ParseComments)
@@ -105,10 +105,6 @@ func (ps *FastPkgStructs) Parse() {
 }
 
 func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
-	if !strings.HasSuffix(filePath, "go") {
-		//非go文件
-		return
-	}
 	var findStruct = func(n ast.Node) bool {
 		var structName string
 		var t ast.Expr
@@ -134,21 +130,21 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 				s.Fields = ps.genField(x, filePath)
 				s.SetDesc(structDec)
 				s.PkgPath = ps.pkgPath
-				//路径+类型名
+				// 路径+类型名
 				key := ps.pkgPath + "." + s.Name
 				ps.allStructs[key] = s
 			}
 		case *ast.FuncDecl:
-			//collecting function
+			// collecting function
 			// 查找函数类似
-			//	func (adv *Adventure) APIs() fastapi.APIs {
-			//	return fastapi.APIs{
-			//	0: {AdventureInfoIn{}, AdventureInfoOut{}},
-			//	1: {StartAdventureIn{}, StartAdventureOut{}},
-			//}
-			//}
+			// 	func (adv *Adventure) APIs() fastapi.APIs {
+			// 	return fastapi.APIs{
+			// 	0: {AdventureInfoIn{}, AdventureInfoOut{}},
+			// 	1: {StartAdventureIn{}, StartAdventureOut{}},
+			// }
+			// }
 			if x.Type.Results == nil || len(x.Type.Params.List) != 0 || len(x.Type.Results.List) != 1 || x.Name.String() != apiFuncName || ps.checkTypes(x.Type.Results.List[0].Type).Key != apiStructKey {
-				//没有返回，非空请求参数，多个返回值，函数名不为api，返回参数类型不为github.com/funny/fastapi.APIs
+				// 没有返回，非空请求参数，多个返回值，函数名不为api，返回参数类型不为github.com/funny/fastapi.APIs
 				return true
 			}
 			api := new(apiFunc)
@@ -158,13 +154,13 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 			for _, v := range x.Body.List {
 				switch xv := v.(type) {
 				case *ast.ReturnStmt:
-					//返回声明
+					// 返回声明
 					for _, vv := range xv.Results {
 						switch vvv := vv.(type) {
 						case *ast.CompositeLit:
-							//key value
+							// key value
 							for _, v := range vvv.Elts {
-								//类型不对，会panic， 不需要检测
+								// 类型不对，会panic， 不需要检测
 								kv := v.(*ast.KeyValueExpr)
 								tk := ps.checkTypes(kv.Key)
 								tv := kv.Value.(*ast.CompositeLit)
@@ -172,13 +168,13 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 								var respStruct *common.NewType
 								_, ok := tv.Elts[0].(*ast.Ident)
 								if !ok {
-									//not nil
+									// not nil
 									req := tv.Elts[0].(*ast.CompositeLit)
 									reqStruct = ps.checkTypes(req.Type)
 								}
 								_, ok = tv.Elts[1].(*ast.Ident)
 								if !ok {
-									//not nil
+									// not nil
 									resp := tv.Elts[1].(*ast.CompositeLit)
 									respStruct = ps.checkTypes(resp.Type)
 								}
@@ -193,7 +189,6 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 					}
 				default:
 					return true
-					//panic("unsupported type")
 				}
 
 			}
@@ -229,14 +224,14 @@ func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []commo
 	return field
 }
 
-//检查类型
+// 检查类型
 func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 	switch t := typeToCheck.(type) {
 	case *ast.Ident:
 		obj := ps.info.ObjectOf(t)
 		newType := new(common.NewType)
 		if obj == nil {
-			//基本类型
+			// 基本类型
 			newType.TypeName = t.Name
 		} else {
 			newType.TypeName = obj.Name()
@@ -247,14 +242,14 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		}
 		return newType
 	case *ast.SelectorExpr:
-		//其它包里面的类型， 如x.t
+		// 其它包里面的类型， 如x.t
 		return ps.checkTypes(t.Sel)
 	case *ast.ArrayType:
-		//列表
+		// 列表
 		elemType := ps.checkTypes(t.Elt)
 		newType := new(common.NewType)
 		if t.Len == nil {
-			//slice
+			// slice
 			newType.TypeName = "[]" + elemType.TypeName
 		} else {
 			v := t.Len.(*ast.BasicLit).Value
@@ -262,7 +257,7 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		}
 		newType.PkgPath = elemType.PkgPath
 		if elemType.PkgPath != "" {
-			//自定义结构体
+			// 自定义结构体
 			newType.Key = elemType.PkgPath + "." + elemType.TypeName
 		}
 		return newType
@@ -275,7 +270,7 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		newType.Key = v.Key
 		return newType
 	case *ast.StarExpr:
-		//引用类型
+		// 引用类型
 		return ps.checkTypes(t.X)
 	case *ast.BasicLit:
 		newType := new(common.NewType)
@@ -285,7 +280,7 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 		newType.Value = t.Value
 		return newType
 	case *ast.StructType:
-		//t := map[string]struct {}
+		// t := map[string]struct {}
 		newType := new(common.NewType)
 		newType.TypeName = "struct"
 		newType.PkgPath = ""

@@ -26,7 +26,6 @@ func main() {
 		m := do.NewMaker("game_server/module/" + d)
 		println(m.AsString())
 	}
-	//m := do.NewMaker("game_server/module/adventure")
-	//println(m.AsString())
-
+	// m := do.NewMaker("game_server/module/adventure")
+	// println(m.AsString())
 }
