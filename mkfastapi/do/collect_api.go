@@ -155,38 +155,42 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 				switch xv := v.(type) {
 				case *ast.ReturnStmt:
 					// 返回声明
-					for _, vv := range xv.Results {
-						switch vvv := vv.(type) {
-						case *ast.CompositeLit:
-							// key value
-							for _, v := range vvv.Elts {
-								// 类型不对，会panic， 不需要检测
-								kv := v.(*ast.KeyValueExpr)
-								tk := ps.checkTypes(kv.Key)
-								tv := kv.Value.(*ast.CompositeLit)
-								var reqStruct *common.NewType
-								var respStruct *common.NewType
-								_, ok := tv.Elts[0].(*ast.Ident)
-								if !ok {
-									// not nil
-									req := tv.Elts[0].(*ast.CompositeLit)
-									reqStruct = ps.checkTypes(req.Type)
-								}
-								_, ok = tv.Elts[1].(*ast.Ident)
-								if !ok {
-									// not nil
-									resp := tv.Elts[1].(*ast.CompositeLit)
-									respStruct = ps.checkTypes(resp.Type)
-								}
-								api.req[tk.Value] = reqStruct
-								api.resp[tk.Value] = respStruct
-							}
-							ps.api = *api
-							return true
-						default:
-							_ = vvv.(*ast.CompositeLit)
-						}
-					}
+					ps.checkResults(api, xv.Results[0])
+					return true
+					// for _, vv := range xv.Results {
+					// 	switch vvv := vv.(type) {
+					// 	case *ast.CompositeLit:
+					// 		// key value
+					// 		for _, v := range vvv.Elts {
+					// 			// 类型不对，会panic， 不需要检测
+					// 			kv := v.(*ast.KeyValueExpr)
+					// 			tk := ps.checkTypes(kv.Key)
+					// 			tv := kv.Value.(*ast.CompositeLit)
+					// 			var reqStruct *common.NewType
+					// 			var respStruct *common.NewType
+					// 			_, ok := tv.Elts[0].(*ast.Ident)
+					// 			if !ok {
+					// 				// not nil
+					// 				req := tv.Elts[0].(*ast.CompositeLit)
+					// 				reqStruct = ps.checkTypes(req.Type)
+					// 			}
+					// 			_, ok = tv.Elts[1].(*ast.Ident)
+					// 			if !ok {
+					// 				// not nil
+					// 				resp := tv.Elts[1].(*ast.CompositeLit)
+					// 				respStruct = ps.checkTypes(resp.Type)
+					// 			}
+					// 			api.req[tk.Value] = reqStruct
+					// 			api.resp[tk.Value] = respStruct
+					// 		}
+					// 		ps.api = *api
+					// 		return true
+					// 	case *ast.Ident:
+					//
+					// 	default:
+					// 		_ = vvv.(*ast.CompositeLit)
+					// 	}
+					// }
 				default:
 					// panic(fmt.Sprintf("unsupported type %v", xv))
 					// return true
@@ -200,6 +204,44 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 	ast.Inspect(f, findStruct)
 }
 
+func (ps *FastPkgStructs) checkResults(api *apiFunc, vv ast.Expr) {
+	switch vvv := vv.(type) {
+	case *ast.CompositeLit:
+		// key value
+		for _, v := range vvv.Elts {
+			// 类型不对，会panic， 不需要检测
+			kv := v.(*ast.KeyValueExpr)
+			tk := ps.checkTypes(kv.Key)
+			tv := kv.Value.(*ast.CompositeLit)
+			var reqStruct *common.NewType
+			var respStruct *common.NewType
+			_, ok := tv.Elts[0].(*ast.Ident)
+			if !ok {
+				// not nil
+				req := tv.Elts[0].(*ast.CompositeLit)
+				reqStruct = ps.checkTypes(req.Type)
+			}
+			_, ok = tv.Elts[1].(*ast.Ident)
+			if !ok {
+				// not nil
+				resp := tv.Elts[1].(*ast.CompositeLit)
+				respStruct = ps.checkTypes(resp.Type)
+			}
+			api.req[tk.Value] = reqStruct
+			api.resp[tk.Value] = respStruct
+		}
+		ps.api = *api
+	case *ast.Ident:
+		// api := fastapi.APIs{}
+		t := vvv.Obj.Decl.(*ast.AssignStmt)
+		tr := t.Rhs[0].(ast.Expr)
+		ps.checkResults(api, tr)
+	default:
+		_ = vv.(*ast.CompositeLit)
+
+	}
+
+}
 func (ps *FastPkgStructs) genField(node *ast.StructType, srcPath string) []common.ApiField {
 	var field []common.ApiField
 	for i := range node.Fields.List {

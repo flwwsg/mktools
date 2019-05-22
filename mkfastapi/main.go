@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"mktools/common"
 	"mktools/mkfastapi/do"
 )
 
@@ -15,17 +16,18 @@ func main() {
 		flag.Usage()
 	}
 	println(module, mkdoc, out)
-	// fpath := common.FullPackagePath("game_server/module")
-	// dirs := common.ListDir(fpath, false, true)
-	d := "day_quest"
-	// for _, d := range dirs {
-	// 	println(d)
-	// 	if d == "apidebug" {
-	// 		continue
-	// 	}
-	m := do.NewMaker("game_server/module/" + d)
-	println(m.AsString())
-	// }
-	// m := do.NewMaker("game_server/module/adventure")
+	// m := do.NewMaker("mktools/mkfastapi/dq")
 	// println(m.AsString())
+	fpath := common.FullPackagePath("game_server/module")
+	dirs := common.ListDir(fpath, false, true)
+	for _, d := range dirs {
+		println(d)
+		if d == "apidebug" {
+			continue
+		}
+		m := do.NewMaker("game_server/module/" + d)
+		println(m.AsString())
+	}
+	m := do.NewMaker("game_server/module/adventure")
+	println(m.AsString())
 }

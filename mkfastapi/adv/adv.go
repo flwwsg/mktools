@@ -4,7 +4,7 @@ import (
 	"github.com/funny/fastapi"
 )
 
-//demo xxx
+// demo xxx
 type Adventure struct {
 }
 
@@ -35,7 +35,7 @@ type StartAdventureOut struct {
 	BB          *TestStruct
 }
 
-//demo
+// demo
 type TestStruct struct {
 	BB int //
 }
