@@ -18,20 +18,35 @@ func main() {
 		flag.Usage()
 	}
 	println(module, mkdoc, out)
-	// m := do.NewMaker("game_server/module/mail")
-	// println(m.AsString())
-	//
 	// cmd := exec.Command("go", "install", "game_server/module/..")
 	// current path
+	genModule := func(mod string, filePath string) {
+		m := do.NewMaker("game_server/module/" + mod)
+		text := m.AsString()
+		if text == "" {
+			return
+		}
+		println(filePath + "/" + mod + ".md")
+		err := common.SaveFile(filePath+"/"+mod+".md", text, true)
+		if err != nil {
+			panic(err)
+		}
+	}
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
+	// 输出路径
 	filePath := dir + "/" + *out
 	if *out != "docs" {
 		filePath = *out
 	}
 	_ = os.MkdirAll(filePath, os.ModePerm)
+	if *module != "all" {
+		genModule(filePath, *module)
+		return
+	}
+	// 所有模块
 	fpath := common.FullPackagePath("game_server/module")
 	dirs := common.ListDir(fpath, false, true)
 	for _, d := range dirs {
@@ -39,15 +54,6 @@ func main() {
 			// 包含cgo
 			continue
 		}
-		m := do.NewMaker("game_server/module/" + d)
-		text := m.AsString()
-		if text == "" {
-			continue
-		}
-		println(filePath + "/" + d + ".md")
-		err := common.SaveFile(filePath+"/"+d+".md", text, true)
-		if err != nil {
-			panic(err)
-		}
+		genModule(d, filePath)
 	}
 }

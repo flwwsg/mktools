@@ -16,7 +16,7 @@ func main() {
 	mPath := filepath.Join(root, "mkmodel", "model")
 	dynPath := filepath.Join(mPath, "dyn")
 	statPath := filepath.Join(mPath, "stat")
-	//do.RegisterModel(filepath.Join(mPath, "reg.go"), filepath.Join(dynPath, "demo2.go"))
+	// do.RegisterModel(filepath.Join(mPath, "reg.go"), filepath.Join(dynPath, "demo2.go"))
 	do.RegisterModel(filepath.Join(mPath, "reg.go"), filepath.Join(statPath, "demo2.go"))
 	fmt.Printf("%v\n", do.FindStructs(dynPath))
 	fmt.Printf("%v\n", do.FindStructs(statPath))

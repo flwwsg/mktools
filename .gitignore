@@ -2,3 +2,4 @@
 .vscode/
 tmp/
 go.sum
+docs/
