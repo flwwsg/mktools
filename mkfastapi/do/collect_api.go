@@ -184,11 +184,13 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 							ps.api = *api
 							return true
 						default:
-							panic("unsupported type")
+							_ = vvv.(*ast.CompositeLit)
 						}
 					}
 				default:
-					return true
+					// panic(fmt.Sprintf("unsupported type %v", xv))
+					// return true
+					continue
 				}
 
 			}

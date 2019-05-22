@@ -79,9 +79,9 @@ func NewMaker(apiPath string) ApiMaker {
 	return ApiMaker{apiPath: apiPath, allStruct: make(map[string]*FastStructType), allAPI: make(map[string]SingleAPI), inStruct: make(map[string]bool)}
 }
 
-//解析需要的结构体
+// 解析需要的结构体
 func (maker *ApiMaker) Parse() {
-	//确定接口需要的结构体
+	// 确定接口需要的结构体
 	maker.genRequiredStruct()
 	for k, v := range maker.apiStruct {
 		maker.collectTypesInStruct(v.PkgPath, k)
@@ -92,7 +92,7 @@ func (maker *ApiMaker) Parse() {
 	maker.genAPI()
 }
 
-//生成当前模块下接口文件
+// 生成当前模块下接口文件
 func (maker *ApiMaker) AsString() string {
 	if len(maker.allAPI) == 0 {
 		maker.Parse()
@@ -133,7 +133,7 @@ func (maker *ApiMaker) genRequiredStruct() {
 	maker.collectStructs(maker.apiPath)
 }
 
-//收集结构体
+// 收集结构体
 func (maker *ApiMaker) collectStructs(pkgPath string) {
 	if maker.inStruct[pkgPath] || pkgPath == "" {
 		return
@@ -148,7 +148,7 @@ func (maker *ApiMaker) collectStructs(pkgPath string) {
 	if pkg.api.recv == nil {
 		return
 	}
-	//假设所有的请求、响应结构体都在本包内
+	// 假设所有的请求、响应结构体都在本包内
 	for k, v := range pkg.api.req {
 		if v != nil {
 			st := maker.allStruct[v.Key]
