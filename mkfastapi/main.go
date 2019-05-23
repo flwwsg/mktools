@@ -8,6 +8,7 @@ import (
 	"mktools/mkfastapi/do"
 	"os"
 	"path"
+	"sync"
 	"text/template"
 )
 
@@ -21,6 +22,7 @@ nav:
 `
 const defaultOut = "docs/docs"
 const allMod = "all"
+const buildTag = "debug"
 
 type MkDoc struct {
 	// mkdoc 站名
@@ -33,6 +35,7 @@ func main() {
 	module := flag.String("module", allMod, "需要生成文档的模块(不包括apidebug, battle), 默认所有模块")
 	out := flag.String("out", defaultOut, "输出的文件夹，默认保存至当前工作目录下的"+defaultOut+"目录")
 	mkdoc := flag.Bool("mkdoc", true, "是否生成 mkdocs 配置文件, 默认true")
+	tag := flag.String("tag", buildTag, "需要查找的编译标签(+build 开头)，对apidebug模块有效")
 	help := flag.Bool("h", false, "help")
 	flag.Parse()
 	if *help {
@@ -41,7 +44,8 @@ func main() {
 	// cmd := exec.Command("go", "install", "game_server/module/..")
 	// current path
 	genModule := func(mod string, filePath string) bool {
-		m := do.NewMaker("game_server/module/" + mod)
+		pkgPath := "game_server/module/" + mod
+		m := do.NewMaker(pkgPath, *tag)
 		text := m.AsString()
 		if text == "" {
 			return false
@@ -65,7 +69,7 @@ func main() {
 		bf := new(bytes.Buffer)
 		err = doc.Execute(bf, m)
 		common.PanicOnErr(err)
-		err = common.SaveFile(configFile, bf.String(), true)
+		err = common.SaveFile(configFile, bf.Bytes(), true)
 		common.PanicOnErr(err)
 	}
 	dir, err := os.Getwd()
@@ -87,15 +91,26 @@ func main() {
 	// 所有模块
 	fpath := common.FullPackagePath("game_server/module")
 	dirs := common.ListDir(fpath, false, true)
-	var existsMod []string
+	var existsMod sync.Map
+	var wg sync.WaitGroup
 	for _, d := range dirs {
-		if d == "apidebug" || d == "battle" {
+		if d == "battle" {
 			// 包含cgo
 			continue
 		}
-		if genModule(d, filePath) {
-			existsMod = append(existsMod, d)
-		}
+		wg.Add(1)
+		go func(m string) {
+			if genModule(m, filePath) {
+				existsMod.Store(m, m)
+			}
+			wg.Done()
+		}(d)
 	}
-	genMkdoc(path.Dir(filePath), existsMod)
+	wg.Wait()
+	var mods []string
+	existsMod.Range(func(key, value interface{}) bool {
+		mods = append(mods, key.(string))
+		return true
+	})
+	genMkdoc(path.Dir(filePath), mods)
 }

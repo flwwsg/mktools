@@ -49,7 +49,8 @@ type FastPkgStructs struct {
 	scope      *types.Scope
 	fset       *token.FileSet
 	// api 接口的struct
-	api apiFunc
+	api      apiFunc
+	buildTag string
 }
 
 func (st FastStructType) IsReq() bool {
@@ -65,8 +66,8 @@ func (api FastField) IsValidTag(t string) bool {
 	return false
 }
 
-func NewPkgStructs(srcPath string) FastPkgStructs {
-	return FastPkgStructs{pkgPath: srcPath, allStructs: make(map[string]*FastStructType), fset: token.NewFileSet()}
+func NewPkgStructs(srcPath string, tag string) FastPkgStructs {
+	return FastPkgStructs{pkgPath: srcPath, allStructs: make(map[string]*FastStructType), fset: token.NewFileSet(), buildTag: tag}
 }
 
 // Parse 使用go/types收集
@@ -85,12 +86,16 @@ func (ps *FastPkgStructs) Parse() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if !ps.checkBuildTag(f.Comments) {
+			continue
+		}
 		allFiles = append(allFiles, f)
 	}
 	info := types.Info{Types: make(map[ast.Expr]types.TypeAndValue), Defs: make(map[*ast.Ident]types.Object),
 		Uses: make(map[*ast.Ident]types.Object), Selections: make(map[*ast.SelectorExpr]*types.Selection)}
 	typeConf := types.Config{Importer: importer.ForCompiler(token.NewFileSet(), "source", nil)}
-
+	// 需要预编译
+	// typeConf := types.Config{Importer: importer.Default()}
 	pkg, err := typeConf.Check(ps.pkgPath, ps.fset, allFiles, &info)
 	if err != nil {
 		log.Fatal(err) // type error
@@ -102,6 +107,37 @@ func (ps *FastPkgStructs) Parse() {
 		filePath := files[i]
 		ps.parseByFile(filePath, f)
 	}
+}
+
+// 判断编译标签是否需要编译, 仅支持 and 操作
+// A build constraint is evaluated as the OR of space-separated options;
+// each option evaluates as the AND of its comma-separated terms;
+// and each term is an alphanumeric word or, preceded by !, its negation.
+func (ps FastPkgStructs) checkBuildTag(comments []*ast.CommentGroup) bool {
+	// 没有标签
+	if len(comments) < 1 || ps.buildTag == "" {
+		return true
+	}
+	c := comments[0].Text()
+	c = strings.TrimSpace(c)
+	tmp := strings.Split(c, " ")
+	if tmp[0] != "+build" {
+		return true
+	}
+	for _, t := range tmp[1:] {
+		tags := strings.Split(t, ",")
+		for _, tt := range tags {
+			if tt == ps.buildTag {
+				return true
+			}
+			// 检查 !tag
+			if string(tt[0]) == "!" && string(tt[1:]) != ps.buildTag {
+				return true
+			}
+		}
+
+	}
+	return false
 }
 
 func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
@@ -158,7 +194,7 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 					ps.checkResults(api, xv.Results[0])
 					return true
 				default:
-					fmt.Printf("unsupported type %v", xv)
+					// fmt.Printf("unsupported type %v", xv)
 					// return true
 					continue
 				}

@@ -97,12 +97,12 @@ func (s *StructType) SetDesc(comm string) {
 	s.Desc = strings.TrimSpace(desc)
 }
 
-//包含包名的类型名
+// 包含包名的类型名
 func (s StructType) FullName() string {
 	return s.PkgPath + "." + s.Name
 }
 
-//print
+// print
 func (nt NewType) String() string {
 	return nt.Key
 }

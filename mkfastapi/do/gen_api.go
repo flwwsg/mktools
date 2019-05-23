@@ -50,6 +50,20 @@ const CustomTypeTemplate = `
 {{end -}}
 `
 
+type SortFastStruct []*FastStructType
+
+func (s SortFastStruct) Less(i, j int) bool {
+	return s[i].Name < s[j].Name
+}
+
+func (s SortFastStruct) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s SortFastStruct) Len() int {
+	return len(s)
+}
+
 // SingleAPI an api
 type SingleAPI struct {
 	ActionDesc    string
@@ -62,21 +76,22 @@ type SingleAPI struct {
 	CustomTypes   map[string]*FastStructType
 }
 
-//生成api
+// 生成api
 type ApiMaker struct {
-	//需要生成api的结构体, key = 路径+类型名
+	// 需要生成api的结构体, key = 路径+类型名
 	allStruct map[string]*FastStructType
-	//组成接口的结构体, key = package path + type
+	// 组成接口的结构体, key = package path + type
 	apiStruct map[string]*FastStructType
-	//接口， key=actionID
+	// 接口， key=actionID
 	allAPI map[string]SingleAPI
-	//需要生成文档的api路径
+	// 需要生成文档的api路径
 	apiPath  string
 	inStruct map[string]bool
+	buildTag string
 }
 
-func NewMaker(apiPath string) ApiMaker {
-	return ApiMaker{apiPath: apiPath, allStruct: make(map[string]*FastStructType), allAPI: make(map[string]SingleAPI), inStruct: make(map[string]bool)}
+func NewMaker(apiPath string, buildTag string) ApiMaker {
+	return ApiMaker{apiPath: apiPath, allStruct: make(map[string]*FastStructType), allAPI: make(map[string]SingleAPI), inStruct: make(map[string]bool), buildTag: buildTag}
 }
 
 // 解析需要的结构体
@@ -113,16 +128,18 @@ func (maker *ApiMaker) AsString() string {
 		i++
 	}
 	sort.Ints(idx)
-	customTypes := make(map[string]*FastStructType)
+	var customTypes SortFastStruct
 	for i, aid := range idx {
 		strAID := strconv.Itoa(aid)
 		api := allAPI[strAID]
 		b := maker.formatOneSingleAPI(api)
 		rtn[i+1] = b.String()
-		for k, v := range api.CustomTypes {
-			customTypes[k] = v
+		for _, v := range api.CustomTypes {
+			customTypes = append(customTypes, v)
 		}
 	}
+	// 排序
+	sort.Sort(customTypes)
 	b := maker.formatCustomTypes(customTypes)
 	rtn[0] = b.String()
 	s := strings.Join(rtn, "")
@@ -141,7 +158,7 @@ func (maker *ApiMaker) collectStructs(pkgPath string) {
 	if maker.inStruct[pkgPath] || pkgPath == "" {
 		return
 	}
-	pkg := NewPkgStructs(pkgPath)
+	pkg := NewPkgStructs(pkgPath, maker.buildTag)
 	pkg.Parse()
 	apiStruct := make(map[string]*FastStructType)
 	for k, v := range pkg.allStructs {
@@ -256,7 +273,7 @@ func (maker *ApiMaker) collectCustomTypes(api *SingleAPI, fields []common.ApiFie
 	}
 }
 
-//格式化一条api
+// 格式化一条api
 func (maker ApiMaker) formatOneSingleAPI(api SingleAPI) *bytes.Buffer {
 	var printDesc = func(desc string) string {
 		if desc == "" {
@@ -284,7 +301,7 @@ func (maker ApiMaker) formatOneSingleAPI(api SingleAPI) *bytes.Buffer {
 	return b
 }
 
-func (maker ApiMaker) formatCustomTypes(allStruct map[string]*FastStructType) *bytes.Buffer {
+func (maker ApiMaker) formatCustomTypes(allStruct []*FastStructType) *bytes.Buffer {
 	var printDesc = func(desc string) string {
 		if desc == "" {
 			return "无"

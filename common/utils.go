@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -124,6 +125,26 @@ func SaveFile(fileName string, textString interface{}, isForce bool) error {
 
 func PanicOnErr(err error) {
 	if err != nil {
+		println(err.Error())
 		panic(err)
 	}
+}
+
+func GoInstall(pkg string, tags string) {
+	var args []string
+	var err error
+	if tags != "" {
+		args = append(args, "-tags")
+		args = append(args, tags)
+	}
+	// 兼容性考虑
+	err = os.Setenv("GO111MODULE", "auto")
+	PanicOnErr(err)
+	pkgPath := FullPackagePath(pkg)
+	args = append(args, pkgPath+"/...")
+	println("cmd ", strings.Join(args, " "))
+	cmd := exec.Command("go", "install", strings.Join(args, " "))
+	err = cmd.Run()
+	PanicOnErr(err)
+
 }
