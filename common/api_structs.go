@@ -17,25 +17,25 @@ type ApiField struct {
 // StructType 结构体
 type StructType struct {
 	Name     string
-	ActionID string //mark action id to specify API, only request struct will be marked
+	ActionID string // mark action id to specify API, only request struct will be marked
 	Fields   []ApiField
 	Desc     string
 	PkgPath  string
 }
 
 type NewType struct {
-	//显示的类型名
+	// 显示的类型名
 	TypeName string
-	//包路径
+	// 包路径
 	PkgPath string
-	//键值
+	// 键值
 	Key string
-	//basic value
+	// basic value
 	Value string
 }
 
-//// PkgStructs package 下的所有结构体
-//type PkgStructs struct {
+// // PkgStructs package 下的所有结构体
+// type PkgStructs struct {
 //	//文件路径
 //	pkgPath    string
 //	info       *types.Info
@@ -45,7 +45,7 @@ type NewType struct {
 //	//是否存在请求、响应结构体
 //	getReq  bool
 //	getResp bool
-//}
+// }
 
 func (field *ApiField) SetDesc(s string) {
 	desc := strings.Replace(s, field.Name, "", 1)
@@ -53,13 +53,13 @@ func (field *ApiField) SetDesc(s string) {
 	field.Desc = strings.TrimSpace(desc)
 }
 
-//// IsValidTag check tag is valid or not
-//func (field *ApiField) IsValidTag(t string) bool {
+// // IsValidTag check tag is valid or not
+// func (field *ApiField) IsValidTag(t string) bool {
 //	return !strings.Contains(t, "-")
-//}
+// }
 //
-////ParseTag handle tag
-//func (field *ApiField) ParseTag(f *ast.Field, t string) {
+// //ParseTag handle tag
+// func (field *ApiField) ParseTag(f *ast.Field, t string) {
 //	// t = "valid: \"Required, xxx\""
 //	if !field.IsValidTag(t) {
 //		return
@@ -80,7 +80,7 @@ func (field *ApiField) SetDesc(s string) {
 //			continue
 //		}
 //	}
-//}
+// }
 
 func (field *ApiField) SetKey(key string) {
 	field.key = key
@@ -91,7 +91,7 @@ func (field ApiField) GetKey() string {
 }
 
 func (s *StructType) SetDesc(comm string) {
-	//drop struct Name
+	// drop struct Name
 	desc := strings.Replace(comm, s.Name, "", 1)
 	desc = strings.Replace(desc, "\n", " ", -1)
 	s.Desc = strings.TrimSpace(desc)

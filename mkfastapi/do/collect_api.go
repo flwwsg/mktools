@@ -1,6 +1,6 @@
 package do
 
-//采集真有趣接口, 生成api文档
+// 采集真有趣接口, 生成api文档
 
 import (
 	"fmt"
@@ -157,40 +157,6 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 					// 返回声明
 					ps.checkResults(api, xv.Results[0])
 					return true
-					// for _, vv := range xv.Results {
-					// 	switch vvv := vv.(type) {
-					// 	case *ast.CompositeLit:
-					// 		// key value
-					// 		for _, v := range vvv.Elts {
-					// 			// 类型不对，会panic， 不需要检测
-					// 			kv := v.(*ast.KeyValueExpr)
-					// 			tk := ps.checkTypes(kv.Key)
-					// 			tv := kv.Value.(*ast.CompositeLit)
-					// 			var reqStruct *common.NewType
-					// 			var respStruct *common.NewType
-					// 			_, ok := tv.Elts[0].(*ast.Ident)
-					// 			if !ok {
-					// 				// not nil
-					// 				req := tv.Elts[0].(*ast.CompositeLit)
-					// 				reqStruct = ps.checkTypes(req.Type)
-					// 			}
-					// 			_, ok = tv.Elts[1].(*ast.Ident)
-					// 			if !ok {
-					// 				// not nil
-					// 				resp := tv.Elts[1].(*ast.CompositeLit)
-					// 				respStruct = ps.checkTypes(resp.Type)
-					// 			}
-					// 			api.req[tk.Value] = reqStruct
-					// 			api.resp[tk.Value] = respStruct
-					// 		}
-					// 		ps.api = *api
-					// 		return true
-					// 	case *ast.Ident:
-					//
-					// 	default:
-					// 		_ = vvv.(*ast.CompositeLit)
-					// 	}
-					// }
 				default:
 					fmt.Printf("unsupported type %v", xv)
 					// return true

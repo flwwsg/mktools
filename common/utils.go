@@ -1,6 +1,6 @@
-//mktools
-//created: 2018/7/30
-//author: wdj
+// mktools
+// created: 2018/7/30
+// author: wdj
 
 package common
 
@@ -42,7 +42,7 @@ func ListDir(fpath string, fullPath bool, onlyDir bool) []string {
 // FindProjectRoot get project path from GOPATH
 func FindProjectRoot(name string) string {
 	gopath := os.Getenv("GOPATH")
-	mulPath := make([]string, 0)
+	var mulPath []string
 	// check in windows
 	if runtime.GOOS == "windows" {
 		mulPath = strings.Split(gopath, ";")
@@ -64,7 +64,7 @@ func FindProjectRoot(name string) string {
 // 包路径
 func FullPackagePath(pkgPath string) string {
 	gopath := os.Getenv("GOPATH")
-	mulPath := make([]string, 0)
+	var mulPath []string
 	// check in windows
 	if runtime.GOOS == "windows" {
 		mulPath = strings.Split(gopath, ";")
@@ -101,11 +101,29 @@ func FindInList(item interface{}, list interface{}) bool {
 	return false
 }
 
-func SaveFile(fileName string, textString string, isForce bool) error {
+func SaveFile(fileName string, textString interface{}, isForce bool) error {
 	_, err := os.Stat(fileName)
 	if os.IsExist(err) && !isForce {
 		// 文件存在且不覆盖
 		return os.ErrExist
 	}
-	return ioutil.WriteFile(fileName, []byte(textString), os.ModePerm)
+	var text []byte
+	ts, ok := textString.(string)
+	if ok {
+		text = []byte(ts)
+	}
+	tb, ok := textString.([]byte)
+	if ok {
+		text = tb
+	}
+	if len(text) == 0 {
+		panic(fmt.Sprintf("invalid type of %v", textString))
+	}
+	return ioutil.WriteFile(fileName, text, os.ModePerm)
+}
+
+func PanicOnErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
