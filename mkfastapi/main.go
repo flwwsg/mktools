@@ -46,7 +46,6 @@ func main() {
 		if text == "" {
 			return false
 		}
-		println(filePath + "/" + mod + ".md")
 		err := common.SaveFile(filePath+"/"+mod+".md", text, true)
 		if err != nil {
 			panic(err)
@@ -59,6 +58,7 @@ func main() {
 			return
 		}
 		configFile := filePath + "/" + "mkdocs.yml"
+		println("mkdocs.yml will be saved in", configFile)
 		doc, err := template.New("mkdocs").Parse(mkdocTemplate)
 		common.PanicOnErr(err)
 		m := MkDoc{"zyq", modList}
@@ -77,6 +77,7 @@ func main() {
 	if *out != defaultOut {
 		filePath = *out
 	}
+	println("documents will be saved in", filePath)
 	_ = os.MkdirAll(filePath, os.ModePerm)
 	if *module != allMod {
 		genModule(filePath, *module)
@@ -87,7 +88,7 @@ func main() {
 	fpath := common.FullPackagePath("game_server/module")
 	dirs := common.ListDir(fpath, false, true)
 	var existsMod []string
-	for _, d := range dirs[:5] {
+	for _, d := range dirs {
 		if d == "apidebug" || d == "battle" {
 			// 包含cgo
 			continue
