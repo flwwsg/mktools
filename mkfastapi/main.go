@@ -41,8 +41,6 @@ func main() {
 	if *help {
 		flag.Usage()
 	}
-	// cmd := exec.Command("go", "install", "game_server/module/..")
-	// current path
 	genModule := func(mod string, filePath string) bool {
 		pkgPath := "game_server/module/" + mod
 		m := do.NewMaker(pkgPath, *tag)
@@ -50,6 +48,7 @@ func main() {
 		if text == "" {
 			return false
 		}
+		println("generating ", mod)
 		err := common.SaveFile(filePath+"/"+mod+".md", text, true)
 		if err != nil {
 			panic(err)
