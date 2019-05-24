@@ -83,7 +83,7 @@ func main() {
 	println("documents will be saved in", filePath)
 	_ = os.MkdirAll(filePath, os.ModePerm)
 	if *module != allMod {
-		genModule(filePath, *module)
+		genModule(*module, filePath)
 		genMkdoc(path.Dir(filePath), []string{*module})
 		return
 	}
