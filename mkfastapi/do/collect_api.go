@@ -78,7 +78,7 @@ func (ps *FastPkgStructs) Parse() {
 
 	for i := range files {
 		fileName := files[i]
-		if !strings.HasSuffix(fileName, "go") || strings.HasSuffix(fileName, "_test.go") {
+		if !strings.HasSuffix(fileName, "go") || strings.HasSuffix(fileName, "_test.go") || strings.HasSuffix(fileName, "fastapi.go") || strings.HasSuffix(fileName, "fastbin.go") {
 			// 非go文件， 测试文件
 			continue
 		}
