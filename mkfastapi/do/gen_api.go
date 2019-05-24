@@ -128,19 +128,26 @@ func (maker *ApiMaker) AsString() string {
 		i++
 	}
 	sort.Ints(idx)
-	var customTypes SortFastStruct
+	// 去重
+	var customTypes = make(map[string]*FastStructType)
 	for i, aid := range idx {
 		strAID := strconv.Itoa(aid)
 		api := allAPI[strAID]
 		b := maker.formatOneSingleAPI(api)
 		rtn[i+1] = b.String()
-		for _, v := range api.CustomTypes {
-			customTypes = append(customTypes, v)
+		for k, v := range api.CustomTypes {
+			customTypes[k] = v
 		}
 	}
 	// 排序
-	sort.Sort(customTypes)
-	b := maker.formatCustomTypes(customTypes)
+	typeList := make(SortFastStruct, len(customTypes))
+	i = 0
+	for _, v := range customTypes {
+		typeList[i] = v
+		i++
+	}
+	sort.Sort(typeList)
+	b := maker.formatCustomTypes(typeList)
 	rtn[0] = b.String()
 	s := strings.Join(rtn, "")
 	return s
