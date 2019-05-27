@@ -8,6 +8,7 @@ import (
 	"mktools/mkfastapi/do"
 	"os"
 	"path"
+	"sort"
 	"sync"
 	"text/template"
 )
@@ -64,6 +65,7 @@ func main() {
 		println("mkdocs.yml will be saved in", configFile)
 		doc, err := template.New("mkdocs").Parse(mkdocTemplate)
 		common.PanicOnErr(err)
+		sort.Strings(modList)
 		m := MkDoc{"zyq", modList}
 		bf := new(bytes.Buffer)
 		err = doc.Execute(bf, m)
