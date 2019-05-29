@@ -11,9 +11,10 @@ import (
 	"go/token"
 	"io/ioutil"
 	"log"
-	"mktools/common"
 	"os"
 	"strings"
+
+	common "gitee.com/flwwsg/utils-go/files"
 )
 
 const statTEMP = `

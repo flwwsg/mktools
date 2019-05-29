@@ -8,10 +8,11 @@ import (
 	"go/token"
 	"go/types"
 	"log"
-	"mktools/common"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"gitee.com/flwwsg/utils-go/files"
 )
 
 const TokenTag = "valid"
@@ -69,13 +70,10 @@ func (field *ApiField) SetDesc(s string) {
 
 // IsValidTag check tag is valid or not
 func (field *ApiField) IsValidTag(t string) bool {
-	if strings.Contains(t, "-") {
-		return false
-	}
-	return true
+	return !strings.Contains(t, "-")
 }
 
-//ParseTag handle tag
+// ParseTag handle tag
 func (field *ApiField) ParseTag(f *ast.Field, t string) {
 	// t = "valid: \"Required, xxx\""
 	if !field.IsValidTag(t) {
@@ -148,8 +146,8 @@ func (s *StructType) IsTypeOf(typeName string) bool {
 
 //Parse 使用go/types收集
 func (ps *PkgStructs) Parse() {
-	fullPath := common.FullPackagePath(ps.pkgPath)
-	files := common.ListDir(fullPath, true, false)
+	fullPath := files.FullPackagePath(ps.pkgPath)
+	files := files.ListDir(fullPath, true, false)
 	allFiles := make([]*ast.File, 0)
 
 	for i := range files {

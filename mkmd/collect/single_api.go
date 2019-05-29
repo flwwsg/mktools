@@ -220,7 +220,7 @@ func (maker ApiMaker) formatCustomTypes(allStruct map[string]*StructType) *bytes
 	return b
 }
 
-//生成当前模块下接口文件
+// 生成当前模块下接口文件
 func (maker *ApiMaker) AsString() string {
 	if len(maker.allAPI) == 0 {
 		maker.Parse()
@@ -238,10 +238,10 @@ func (maker *ApiMaker) AsString() string {
 		i++
 	}
 	sort.Ints(idx)
-	customTypes := make(map[string]*StructType, 0)
+	customTypes := make(map[string]*StructType)
 	for i, aid := range idx {
 		strAID := strconv.Itoa(aid)
-		api, _ := allAPI[strAID]
+		api := allAPI[strAID]
 		b := maker.formatOneSingleAPI(api)
 		rtn[i+1] = b.String()
 		for k, v := range api.CustomTypes {

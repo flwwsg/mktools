@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"flag"
 	"log"
-	"mktools/common"
 	"mktools/mkfastapi/do"
 	"os"
 	"path"
 	"sort"
 	"sync"
 	"text/template"
+
+	myErr "gitee.com/flwwsg/utils-go/errors"
+	"gitee.com/flwwsg/utils-go/files"
 )
 
 const mkdocTemplate = `
@@ -50,7 +52,7 @@ func main() {
 			return false
 		}
 		println("generating ", mod)
-		err := common.SaveFile(filePath+"/"+mod+".md", text, true)
+		err := files.SaveFile(filePath+"/"+mod+".md", text, true)
 		if err != nil {
 			panic(err)
 		}
@@ -64,14 +66,14 @@ func main() {
 		configFile := filePath + "/" + "mkdocs.yml"
 		println("mkdocs.yml will be saved in", configFile)
 		doc, err := template.New("mkdocs").Parse(mkdocTemplate)
-		common.PanicOnErr(err)
+		myErr.PanicOnErr(err)
 		sort.Strings(modList)
 		m := MkDoc{"zyq", modList}
 		bf := new(bytes.Buffer)
 		err = doc.Execute(bf, m)
-		common.PanicOnErr(err)
-		err = common.SaveFile(configFile, bf.Bytes(), true)
-		common.PanicOnErr(err)
+		myErr.PanicOnErr(err)
+		err = files.SaveFile(configFile, bf.Bytes(), true)
+		myErr.PanicOnErr(err)
 	}
 	dir, err := os.Getwd()
 	if err != nil {
@@ -90,8 +92,8 @@ func main() {
 		return
 	}
 	// 所有模块
-	fpath := common.FullPackagePath("game_server/module")
-	dirs := common.ListDir(fpath, false, true)
+	fpath := files.FullPackagePath("game_server/module")
+	dirs := files.ListDir(fpath, false, true)
 	var existsMod sync.Map
 	var wg sync.WaitGroup
 	for _, d := range dirs {

@@ -8,29 +8,32 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"mktools/common"
 	"mktools/mkact/do"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
+
+	"gitee.com/flwwsg/utils-go/errors"
+
+	"gitee.com/flwwsg/utils-go/files"
 )
 
 func main() {
 	act := new(do.Act)
-	toolsPath := common.FindProjectRoot("mktools")
+	toolsPath := files.FindProjectRoot("mktools")
 	configPath := path.Join(toolsPath, "config", "config.json")
 	conf, _ := ioutil.ReadFile(configPath)
-	json.Unmarshal(conf, act)
+	_ = json.Unmarshal(conf, act)
 	do.UnmarshalAPI(conf, act)
-	arthurPath := common.FindProjectRoot("arthur")
+	arthurPath := files.FindProjectRoot("arthur")
 	fullPath := path.Join(arthurPath, "app", "actions", act.ApiType, act.PackageName())
 	regPath := path.Join(arthurPath, "app", "actions", "load.go")
-	os.MkdirAll(fullPath, 777)
+	_ = os.MkdirAll(fullPath, os.ModePerm)
 	for _, api := range act.ApiList {
 		text := api.Text(act.PackageName())
 		filePath := path.Join(fullPath, api.GoFileName())
-		//ignore file exist
+		// ignore file exist
 		_, err := os.Open(filePath)
 		if err == nil {
 			continue
@@ -42,15 +45,16 @@ func main() {
 
 		_, err = io.Copy(f, strings.NewReader(text))
 		if err != nil {
-			f.Close()
+			_ = f.Close()
 			panic(err)
 		}
-		f.Close()
-		//execute  gofmt
+		_ = f.Close()
+		// execute  gofmt
 		cmd := exec.Command("gofmt", "-w", filePath)
-		cmd.Run()
+		err = cmd.Run()
+		errors.PanicOnErr(err)
 	}
-	//write custom types
+	// write custom types
 	filePath := path.Join(fullPath, "types.go")
 	f, err := os.Create(filePath)
 	if err != nil {
@@ -58,18 +62,18 @@ func main() {
 	}
 	_, err = io.Copy(f, strings.NewReader(act.TypesText()))
 	if err != nil {
-		f.Close()
+		_ = f.Close()
 		panic(err)
 	}
-	f.Close()
-	//execute  gofmt
+	_ = f.Close()
+	// execute  gofmt
 	cmd := exec.Command("gofmt", "-w", filePath)
-	cmd.Run()
+	_ = cmd.Run()
 	cmd = exec.Command("gen-doc.exe", "-a")
-	cmd.Run()
+	_ = cmd.Run()
 	// register act
 	do.RegisterAct(regPath, *act)
 	// format imports
 	cmd = exec.Command("gofmt ", "-w", regPath)
-	cmd.Run()
+	_ = cmd.Run()
 }

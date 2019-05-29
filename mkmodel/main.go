@@ -6,13 +6,14 @@ package main
 
 import (
 	"fmt"
-	"mktools/common"
 	"mktools/mkmodel/do"
 	"path/filepath"
+
+	"gitee.com/flwwsg/utils-go/files"
 )
 
 func main() {
-	root := common.FindProjectRoot("mktools")
+	root := files.FindProjectRoot("mktools")
 	mPath := filepath.Join(root, "mkmodel", "model")
 	dynPath := filepath.Join(mPath, "dyn")
 	statPath := filepath.Join(mPath, "stat")
