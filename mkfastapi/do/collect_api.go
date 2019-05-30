@@ -75,11 +75,11 @@ func NewPkgStructs(srcPath string, tag string) FastPkgStructs {
 // Parse 使用go/types收集
 func (ps *FastPkgStructs) Parse() {
 	fullPath := files.FullPackagePath(ps.pkgPath)
-	files := files.ListDir(fullPath, true, false)
+	listFiles := files.ListDir(fullPath, true, false)
 	allFiles := make([]*ast.File, 0)
 
-	for i := range files {
-		fileName := files[i]
+	for i := range listFiles {
+		fileName := listFiles[i]
 		if !strings.HasSuffix(fileName, "go") || strings.HasSuffix(fileName, "_test.go") || strings.HasSuffix(fileName, "fastapi.go") || strings.HasSuffix(fileName, "fastbin.go") {
 			// 非go文件， 测试文件
 			continue
@@ -106,7 +106,7 @@ func (ps *FastPkgStructs) Parse() {
 	ps.scope = pkg.Scope()
 	for i := range allFiles {
 		f := allFiles[i]
-		filePath := files[i]
+		filePath := listFiles[i]
 		ps.parseByFile(filePath, f)
 	}
 }
@@ -338,7 +338,7 @@ func (ps *FastPkgStructs) checkTypes(typeToCheck ast.Expr) *common.NewType {
 	case *ast.FuncType:
 		return nil
 	case *ast.InterfaceType:
-		// 暂时不支持
+		// interface
 		newType := new(common.NewType)
 		newType.TypeName = "interface"
 		newType.PkgPath = ""
