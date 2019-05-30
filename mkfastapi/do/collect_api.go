@@ -181,7 +181,7 @@ func (ps *FastPkgStructs) parseByFile(filePath string, f ast.Node) {
 			// 	1: {StartAdventureIn{}, StartAdventureOut{}},
 			// }
 			// }
-			if x.Type.Results == nil || len(x.Type.Params.List) != 0 || len(x.Type.Results.List) != 1 || x.Name.String() != apiFuncName || ps.checkTypes(x.Type.Results.List[0].Type).Key != apiStructKey {
+			if x.Type.Results == nil || len(x.Type.Params.List) != 0 || len(x.Type.Results.List) != 1 || x.Name.String() != apiFuncName || !strings.HasSuffix(ps.checkTypes(x.Type.Results.List[0].Type).Key, apiStructKey) {
 				// 没有返回，非空请求参数，多个返回值，函数名不为api，返回参数类型不为github.com/funny/fastapi.APIs
 				return true
 			}
