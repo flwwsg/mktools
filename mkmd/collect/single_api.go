@@ -73,9 +73,9 @@ func NewMaker(apiPath string) ApiMaker {
 	return ApiMaker{apiPath: apiPath, allStruct: make(map[string]*StructType), allAPI: make(map[string]SingleAPI), inStruct: make(map[string]bool)}
 }
 
-//解析需要的结构体
+// 解析需要的结构体
 func (maker *ApiMaker) Parse() {
-	//确定接口需要的结构体
+	// 确定接口需要的结构体
 	maker.genRequiredStruct()
 	for k, v := range maker.apiStruct {
 		maker.collectTypesInStruct(v.PkgPath, k)
@@ -86,7 +86,7 @@ func (maker *ApiMaker) Parse() {
 	maker.genAPI()
 }
 
-//确定结构体字段的类型
+// 确定结构体字段的类型
 func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	_, ok := maker.allStruct[key]
 	if ok || key == "" {
@@ -95,7 +95,7 @@ func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	maker.collectStructs(pkgPath)
 	s := maker.allStruct[key]
 	if s == nil {
-		//not struct type
+		// not struct type
 		return
 	}
 	for _, field := range s.Fields {
@@ -103,7 +103,7 @@ func (maker *ApiMaker) collectTypesInStruct(pkgPath string, key string) {
 	}
 }
 
-//收集文件夹下的结构体
+// 收集文件夹下的结构体
 func (maker *ApiMaker) collectStructs(pkgPath string) {
 	if maker.inStruct[pkgPath] || pkgPath == "" {
 		return
@@ -116,7 +116,7 @@ func (maker *ApiMaker) collectStructs(pkgPath string) {
 	maker.inStruct[pkgPath] = true
 }
 
-//获取请求、响应结构体
+// 获取请求、响应结构体
 func (maker *ApiMaker) genRequiredStruct() {
 	if maker.apiStruct != nil {
 		return
@@ -131,7 +131,7 @@ func (maker *ApiMaker) genRequiredStruct() {
 	maker.apiStruct = apiStructs
 }
 
-//genAPI generating single api with ActionID
+// genAPI generating single api with ActionID
 func (maker *ApiMaker) genAPI() map[string]SingleAPI {
 	if len(maker.allAPI) != 0 {
 		return maker.allAPI
@@ -147,7 +147,7 @@ func (maker *ApiMaker) genAPI() map[string]SingleAPI {
 			api.ReqFields = st.ReqFields
 			api.RespFields = st.RespFields
 		}
-		//Desc of request must before Desc of response
+		// Desc of request must before Desc of response
 		if v.IsResp() {
 			api.RespFields = v.Fields
 		}
@@ -172,7 +172,7 @@ func (maker *ApiMaker) collectCustomTypes(api *SingleAPI, fields []ApiField) {
 	}
 }
 
-//格式化一条api
+// 格式化一条api
 func (maker ApiMaker) formatOneSingleAPI(api SingleAPI) *bytes.Buffer {
 	var printDesc = func(desc string) string {
 		if desc == "" {

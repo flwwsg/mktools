@@ -15,19 +15,22 @@ func (adv *Adventure) APIs() fastapi.APIs {
 	}
 }
 
-//  秘境探险信息(请求队伍服)
+//  本协议说明如: 秘境探险信息(请求队伍服)
 type AdventureInfoIn struct {
-	i int // demo test
+	I int // 接口说明
 }
 
+// 此处可以空，如果不为空，只有 AdventureInfoIn 注释为空时或者为结构体 nil 时，才会生效。
 type AdventureInfoOut struct {
-	BattleData      []byte // 战斗json数据
-	BattleStartTime int64  // 战斗开始时间
+	// 这边也可以写，优先级低
+	BattleData []byte // 优先级更高，战斗json数据
+	// 战斗开始时间
+	BattleStartTime int64
 }
 
-// 秘境选择界面 开始冒险(请求队伍服)
+// 一样
 type StartAdventureIn struct {
-	AdventureId int16 //demo
+	AdventureId int16 // demo
 }
 
 type StartAdventureOut struct {
@@ -37,5 +40,5 @@ type StartAdventureOut struct {
 
 // demo
 type TestStruct struct {
-	BB int //
+	BB int // xxxx
 }

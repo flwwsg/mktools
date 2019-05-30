@@ -74,7 +74,7 @@ type Act struct {
 	ApiList     []*api
 }
 
-//UnmarshalAPI get api from json
+// UnmarshalAPI get api from json
 func UnmarshalAPI(b []byte, a *Act) {
 	x := make(map[string]interface{})
 	err := json.Unmarshal(b, &x)
@@ -86,16 +86,16 @@ func UnmarshalAPI(b []byte, a *Act) {
 	delete(x, "apiType")
 	delete(x, "customTypes")
 	for k, v := range x {
-		//get api
+		// get api
 		api := new(api)
 		api.ActionID = k
 		api.ApiType = apiType
-		//get field
+		// get field
 		for kk, vv := range v.(map[string]interface{}) {
 			switch kk {
 			case "desc":
 				api.Desc = vv.(string)
-			//case "actName":
+			// case "actName":
 			//	api.ActName = strings.Title(vv.(string))
 			case "req", "resp":
 				for _, req := range vv.([]interface{}) {
@@ -158,7 +158,7 @@ package %s
 }
 
 func (a *api) Text(pkgName string) string {
-	//generating request struct
+	// generating request struct
 	pkgText := a.packageText(pkgName)
 	req := a.structText(true)
 	resp := a.structText(false)
@@ -214,7 +214,7 @@ import (
 
 }
 
-//generating struct text
+// generating struct text
 func (a *api) structText(req bool) string {
 	template := `
 //%s %s
@@ -299,7 +299,7 @@ func (f *field) Text() string {
 }
 
 func RegisterAct(regPath string, act Act) {
-	//register import  path in load.go
+	// register import  path in load.go
 	fs := token.NewFileSet()
 	src, err := ioutil.ReadFile(regPath)
 	if err != nil {
@@ -314,7 +314,7 @@ func RegisterAct(regPath string, act Act) {
 	exists := false
 	strSrc := string(src)
 	for _, i := range f.Imports {
-		//drop "" in path
+		// drop "" in path
 		if i.Path.Value[1:len(i.Path.Value)-1] == importPath && i.Name.String() == importName {
 			exists = true
 			break
@@ -333,8 +333,8 @@ func RegisterAct(regPath string, act Act) {
 		source = strSrc[:last.End()-1] + "\n\t" + importName + " \"" + importPath + "\"" + strSrc[last.End()-1:]
 	}
 	// backup file ignore error
-	os.Rename(regPath, regPath+".bak")
-	err = ioutil.WriteFile(regPath, []byte(source), 777)
+	_ = os.Rename(regPath, regPath+".bak")
+	err = ioutil.WriteFile(regPath, []byte(source), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,14 +3,14 @@ package do
 import "testing"
 
 func TestCollect(t *testing.T) {
-	pkgPath := "mktools/mkfastapi/adv"
+	pkgPath := "mktools/mkfastapi/example/adv"
 	m := NewMaker(pkgPath, "")
 	m.Parse()
 	println(m.AsString())
 }
 
 func TestTagTag(t *testing.T) {
-	m := NewMaker("mktools/mkfastapi/build-tag", "debug")
+	m := NewMaker("mktools/mkfastapi/example/build-tag", "debug")
 	m.Parse()
 	if len(m.allAPI) != 1 {
 		// 采集失败
@@ -20,7 +20,7 @@ func TestTagTag(t *testing.T) {
 		t.Error("invalid api ")
 	}
 	println(m.AsString())
-	m = NewMaker("mktools/mkfastapi/build-tag", "release")
+	m = NewMaker("mktools/mkfastapi/example/build-tag", "release")
 	m.Parse()
 	if len(m.allAPI) != 1 {
 		// 采集失败

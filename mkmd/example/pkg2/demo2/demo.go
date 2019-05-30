@@ -4,8 +4,10 @@
 
 package demo2
 
-import . "mktools/mkmd/pkg2/demo3"
+import (
+	"mktools/mkmd/example/pkg2/demo3"
+)
 
 type NotS struct {
-	No NoType
+	No demo3.NoType
 }

@@ -7,7 +7,7 @@ import (
 //var mkProject = "mktool"
 
 func TestApiMaker(t *testing.T) {
-	pkg := "mktools/mkmd/pkg1"
+	pkg := "mktools/mkmd/example/pkg1"
 	mk := NewMaker(pkg)
 	mk.Parse()
 	println(mk.AsString())

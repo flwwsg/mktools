@@ -10,4 +10,6 @@ require (
 	github.com/funny/link v0.0.0-20190321084249-bd07e4e9e63f // indirect
 	github.com/funny/pprof v0.0.0-20151224073220-98f026be1494 // indirect
 	github.com/funny/slab v0.0.0-20180511031532-b1fad5e5d478 // indirect
+	github.com/go-sql-driver/mysql v1.4.1
+	github.com/go-xorm/xorm v0.7.1
 )

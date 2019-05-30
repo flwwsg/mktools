@@ -1,6 +1,6 @@
 package pkg4
 
-import demo4 "mktools/mkmd/pkg2/demo2"
+import demo4 "mktools/mkmd/example/pkg2/demo2"
 
 //import . "mktools/mkmd/pkg2/demo3"
 

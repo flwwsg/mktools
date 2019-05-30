@@ -1,6 +1,6 @@
 package pkg5
 
-import "mktools/mkmd/pkg1"
+import "mktools/mkmd/example/pkg1"
 
 type Info5 struct {
 	//aaaaaaaa

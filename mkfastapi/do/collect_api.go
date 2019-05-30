@@ -12,6 +12,8 @@ import (
 	"mktools/common"
 	"strings"
 
+	"gitee.com/flwwsg/utils-go/files"
+
 	"go/ast"
 )
 
@@ -72,8 +74,8 @@ func NewPkgStructs(srcPath string, tag string) FastPkgStructs {
 
 // Parse 使用go/types收集
 func (ps *FastPkgStructs) Parse() {
-	fullPath := common.FullPackagePath(ps.pkgPath)
-	files := common.ListDir(fullPath, true, false)
+	fullPath := files.FullPackagePath(ps.pkgPath)
+	files := files.ListDir(fullPath, true, false)
 	allFiles := make([]*ast.File, 0)
 
 	for i := range files {

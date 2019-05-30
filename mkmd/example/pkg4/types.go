@@ -4,8 +4,7 @@
 
 package pkg4
 
-import "mktools/mkmd/pkg5"
-import . "mktools/mkmd/pkg5"
+import . "mktools/mkmd/example/pkg5"
 
 //CountryMap 国家列表
 type CountryMap struct {
@@ -33,5 +32,5 @@ type DispatchInfo struct {
 	RemainDispatched int
 	//info
 	Info  Info5
-	Info6 pkg5.Info6
+	Info6 Info6
 }

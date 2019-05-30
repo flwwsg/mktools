@@ -4,8 +4,8 @@
 package pkg4
 
 import (
-	"mktools/mkmd/pkg1"
-	"mktools/mkmd/pkg5"
+	"mktools/mkmd/example/pkg1"
+	"mktools/mkmd/example/pkg5"
 )
 
 //EnterMapResp 进入世界地图
