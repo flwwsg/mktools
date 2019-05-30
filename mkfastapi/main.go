@@ -37,12 +37,13 @@ type MkDoc struct {
 func main() {
 	module := flag.String("module", allMod, "需要生成文档的模块(不包括apidebug, battle), 默认所有模块")
 	out := flag.String("out", defaultOut, "输出的文件夹，默认保存至当前工作目录下的"+defaultOut+"目录")
-	mkdoc := flag.Bool("mkdoc", true, "是否生成 mkdocs 配置文件, 默认true")
+	mkdoc := flag.Bool("mkdoc", false, "是否生成 mkdocs 配置文件, 默认false")
 	tag := flag.String("tag", buildTag, "需要查找的编译标签(+build 开头)，对apidebug模块有效")
 	help := flag.Bool("h", false, "help")
 	flag.Parse()
 	if *help {
 		flag.Usage()
+		return
 	}
 	genModule := func(mod string, filePath string) bool {
 		pkgPath := "game_server/module/" + mod
