@@ -42,8 +42,7 @@ func SplitTable(tables []Table, module map[string][]string) (moduleTable map[str
 	moduleTable = make(map[string][]Table)
 	for i := range tables {
 		name := tables[i].Name
-		nameList := strings.Split(name, "_")
-		if len(nameList) < 1 || nameList[0] == "player" || nameList[0] == "global" {
+		if strings.HasPrefix(name, "player") || strings.HasPrefix(name, "global") {
 			// 忽略玩家表
 			continue
 		}
