@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,7 +19,7 @@ const configJSON = "config.json"
 var ioOut io.Writer = os.Stdout
 
 func main() {
-	var config = do.Config{}
+	var config do.Config
 	var saveDir string
 	debug := flag.Bool("d", false, "是否打开调试")
 	out := flag.String("out", defaultOut, "输出的文件夹，默认保存至当前工作目录下的"+defaultOut+"目录")
@@ -38,20 +37,8 @@ func main() {
 	if *configPath == "" {
 		*configPath = currentDir + "/" + configJSON
 	}
-	fullPath, err := filepath.Abs(*configPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	data, err := ioutil.ReadFile(fullPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		log.Fatal(err)
-	}
+	config = loadConfig(*configPath)
 	config.Debug = *debug
-	fmt.Printf("%v\n", config)
 	repo := do.NewRepo(&config)
 	// get db
 	db, err := repo.GetDB(&do.DB{Name: config.DBName})
@@ -84,4 +71,21 @@ func main() {
 		}
 		do.RenderTable(v, ioOut)
 	}
+}
+
+func loadConfig(configPath string) do.Config {
+	fullPath, err := filepath.Abs(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data, err := ioutil.ReadFile(fullPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := do.Config{}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return config
 }
