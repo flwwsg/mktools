@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"mktools/mktable/do"
+	"os"
 
 	"gitee.com/flwwsg/utils-go/errors"
 )
 
 func main() {
-	var config = Config{
+	var config = do.Config{
 		Host:     "192.168.112.130",
 		Port:     3306,
 		Socket:   "",
@@ -16,10 +17,12 @@ func main() {
 		Debug:    true,
 		DBName:   "dump-db",
 	}
-	repo := NewRepo(&config)
+	repo := do.NewRepo(&config)
 	// get db
-	db, err := repo.GetDB(&DB{Name: config.DBName})
+	db, err := repo.GetDB(&do.DB{Name: config.DBName})
 	errors.PanicOnErr(err)
-	fmt.Printf("\n%v", db)
-	fmt.Printf("\n%v\n", db.Tables)
+	// fmt.Printf("\n%v", db)
+	// fmt.Printf("\n%v\n", db.Tables)
+	do.RenderTable(db.Tables, os.Stdout)
+
 }

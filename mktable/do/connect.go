@@ -1,4 +1,4 @@
-package main
+package do
 
 import (
 	"fmt"
@@ -16,9 +16,8 @@ type Config struct {
 	Username string
 	Password string
 	DBName   string
-	// Tables   []string
-	Output string
-	Debug  bool
+	Output   string
+	Debug    bool
 }
 
 type Repo struct {
@@ -71,6 +70,7 @@ func (repo *Repo) GetDB(cond *DB) (item DB, err error) {
 	return DB{Name: targetSchema.Name, CharSet: targetSchema.CharSet, Collation: targetSchema.Collation, Tables: tables}, nil
 }
 
+// 获取数据库下的所有表
 func (repo *Repo) GetTables(cond *Table) (items []Table, err error) {
 	var tCond table
 	if cond != nil {
@@ -102,6 +102,7 @@ func (repo *Repo) GetTables(cond *Table) (items []Table, err error) {
 	return items, nil
 }
 
+// 获取所有列信息
 func (repo *Repo) GetColumns(cond *Column) (items []Column, err error) {
 	var cCond column
 	if cond != nil {

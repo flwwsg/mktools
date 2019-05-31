@@ -56,15 +56,15 @@ type SingleAPI struct {
 	CustomTypes map[string]*StructType
 }
 
-//生成api
+// 生成api
 type ApiMaker struct {
-	//需要生成api的结构体, key = 路径+类型名
+	// 需要生成api的结构体, key = 路径+类型名
 	allStruct map[string]*StructType
-	//组成接口号的结构体
+	// 组成接口号的结构体
 	apiStruct map[string]*StructType
-	//接口， key=ActionID
+	// 接口， key=ActionID
 	allAPI map[string]SingleAPI
-	//需要生成文档的api路径
+	// 需要生成文档的api路径
 	apiPath  string
 	inStruct map[string]bool
 }
