@@ -18,6 +18,7 @@ type Config struct {
 	DBName   string
 	Output   string
 	Debug    bool
+	Module   map[string][]string
 }
 
 type Repo struct {
@@ -85,8 +86,8 @@ func (repo *Repo) GetTables(cond *Table) (items []Table, err error) {
 	}
 	for i := range tables {
 		cols, err := repo.GetColumns(&Column{
-			DB:   tables[i].Schema,
-			Name: tables[i].Name,
+			DB:    tables[i].Schema,
+			Table: tables[i].Name,
 		})
 		if err != nil {
 			return nil, err
