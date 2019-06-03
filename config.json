@@ -5,6 +5,7 @@
   "Password": "123456",
   "DBName": "team_place",
   "Module":{
-    "daily_quest": ["daily_wish_value", "daily_with_award"]
+    "daily_quest": ["daily_.*"],
+    "equip" : ["^equip_.*", "daily_.*"]
   }
 }

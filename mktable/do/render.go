@@ -40,24 +40,23 @@ func RenderTable(tables []Table, out io.Writer) {
 // SplitTable 根据条件区分模块
 func SplitTable(tables []Table, module map[string][]string) (moduleTable map[string][]Table) {
 	moduleTable = make(map[string][]Table)
-	for i := range tables {
-		name := tables[i].Name
-		if strings.HasPrefix(name, "player") || strings.HasPrefix(name, "global") {
-			// 忽略玩家表
-			continue
-		}
-		for k, v := range module {
-			if files.FindInList(name, v) {
+	for k, v := range module {
+		for i := range tables {
+			name := tables[i].Name
+			if strings.HasPrefix(name, "player") || strings.HasPrefix(name, "global") {
+				// 忽略玩家表
+				continue
+			}
+			if files.RexTest(name, v...) {
 				_, ok := moduleTable[k]
 				if ok {
 					moduleTable[k] = append(moduleTable[k], tables[i])
-					break
 				} else {
 					moduleTable[k] = []Table{tables[i]}
-					break
 				}
 			}
 		}
+
 	}
 	return
 }
