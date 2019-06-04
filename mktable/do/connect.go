@@ -10,15 +10,16 @@ import (
 
 // Config 配置信息
 type Config struct {
-	Host     string
-	Port     int
-	Socket   string
-	Username string
-	Password string
-	DBName   string
-	Output   string
-	Debug    bool
-	Module   map[string][]string
+	Host          string
+	Port          int
+	Socket        string
+	Username      string
+	Password      string
+	DBName        string
+	Output        string
+	Debug         bool
+	IgnorePattern []string // 需要忽略的表名
+	Module        map[string][]string
 }
 
 type Repo struct {

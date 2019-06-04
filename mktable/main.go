@@ -43,7 +43,7 @@ func main() {
 	// get db
 	db, err := repo.GetDB(&do.DB{Name: config.DBName})
 	errors.PanicOnErr(err)
-	sTables := do.SplitTable(db.Tables, config.Module)
+	sTables := do.SplitTable(db.Tables, config.Module, config.IgnorePattern)
 	writeFile := *out != ""
 
 	if writeFile {

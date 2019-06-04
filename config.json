@@ -4,6 +4,7 @@
   "Username": "dev",
   "Password": "123456",
   "DBName": "team_place",
+  "IgnorePattern": ["^player_*", "^global_*"],
   "Module":{
     "daily_quest": ["daily_.*"],
     "equip" : ["^equip_.*", "daily_.*"]
