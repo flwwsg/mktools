@@ -304,7 +304,14 @@ func (ps *PkgStructs) checkTypes(typeToCheck ast.Expr) NewType {
 			//slice
 			newType.TypeName = "[]" + elemType.TypeName
 		} else {
-			v := t.Len.(*ast.BasicLit).Value
+			var v string
+			_, ok := t.Len.(*ast.Ident)
+			if ok {
+				// 常量
+				v = t.Len.(*ast.Ident).String()
+			} else {
+				v = t.Len.(*ast.BasicLit).Value
+			}
 			newType.TypeName = fmt.Sprintf("[%s]"+elemType.TypeName, v)
 		}
 		newType.PkgPath = elemType.PkgPath
