@@ -2,6 +2,7 @@ package do
 
 import (
 	"fmt"
+	"sort"
 
 	"gitee.com/flwwsg/utils-go/errors"
 	_ "github.com/go-sql-driver/mysql"
@@ -85,6 +86,9 @@ func (repo *Repo) GetTables(cond *Table) (items []Table, err error) {
 	if err != nil {
 		return nil, err
 	}
+	//need to order
+	mapTable := make(map[string]Table)
+	var tbls []string
 	for i := range tables {
 		cols, err := repo.GetColumns(&Column{
 			DB:    tables[i].Schema,
@@ -93,13 +97,19 @@ func (repo *Repo) GetTables(cond *Table) (items []Table, err error) {
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, Table{
+		tbl := Table{
 			DB:        tables[i].Schema,
 			Name:      tables[i].Name,
 			Collation: tables[i].Collation,
 			Comment:   tables[i].Comment,
 			Columns:   cols,
-		})
+		}
+		mapTable[tables[i].Name] = tbl
+		tbls = append(tbls, tables[i].Name)
+	}
+	sort.Strings(tbls)
+	for _, k := range tbls {
+		items = append(items, mapTable[k])
 	}
 	return items, nil
 }

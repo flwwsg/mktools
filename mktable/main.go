@@ -9,6 +9,7 @@ import (
 	"mktools/mktable/do"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gitee.com/flwwsg/utils-go/errors"
 )
@@ -45,7 +46,13 @@ func main() {
 	errors.PanicOnErr(err)
 	sTables := do.SplitTable(db.Tables, config.Module, config.IgnorePattern)
 	writeFile := *out != ""
-
+	keys := make([]string, len(sTables))
+	i := 0
+	for k := range sTables {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
 	if writeFile {
 		if *out != defaultOut {
 			saveDir = *out
@@ -56,9 +63,10 @@ func main() {
 		_ = os.MkdirAll(saveDir, os.ModePerm)
 	}
 	// 根据配置获取表
-	for k, v := range sTables {
+	for _, t := range keys {
+		v := sTables[t]
 		if writeFile {
-			f, err := os.Create(saveDir + "/" + k + ".md")
+			f, err := os.Create(saveDir + "/" + t + ".md")
 			if err != nil {
 				log.Fatal(err)
 			}

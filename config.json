@@ -1,12 +1,13 @@
 {
-  "Host": "192.168.112.130",
+  "Host": "47.244.55.226",
   "Port": 3306,
-  "Username": "dev",
-  "Password": "123456",
-  "DBName": "team_place",
+  "Username": "root",
+  "Password": "Ticsafe123",
+  "DBName": "api_blockchain",
   "IgnorePattern": ["^player_*", "^global_*"],
   "Module":{
-    "daily_quest": ["daily_.*"],
-    "equip" : ["^equip_.*", "daily_.*"]
+    "api_blockchain": [
+      "^[^.]+"
+    ]
   }
 }
